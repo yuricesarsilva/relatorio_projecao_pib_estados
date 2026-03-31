@@ -1,0 +1,16 @@
+# R
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# Dados brutos (grandes, não versionar)
+base_bruta/
+
+# Output gerado
+output/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
