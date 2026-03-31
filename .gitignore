@@ -8,6 +8,9 @@
 # Dados brutos (grandes, não versionar)
 base_bruta/
 
+# Dados processados (reproduzíveis rodando R/01_leitura_dados.R)
+dados/
+
 # Output gerado
 output/
 
