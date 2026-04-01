@@ -154,7 +154,10 @@ if (nrow(pares_faltando) > 0) {
            variavel = "impostos_nominal") |>
     select(geo, ano, valor, variavel)
 
-  impostos_nominal <- bind_rows(impostos_nominal, impostos_imputados) |>
+  impostos_nominal <- bind_rows(
+    impostos_nominal |> filter(!is.na(valor)),
+    impostos_imputados
+  ) |>
     arrange(geo, ano)
 } else {
   message("Dados SIDRA cobrem todos os anos disponíveis. Nenhuma imputação necessária.")
