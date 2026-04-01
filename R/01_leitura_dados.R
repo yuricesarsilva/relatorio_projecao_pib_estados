@@ -126,6 +126,40 @@ impostos_nominal <- ler_especial_simples(
 ) |>
   mutate(valor = valor / 1000)
 
+# Imputar impostos faltantes (tipicamente 2022–2023) via identidade contábil:
+#   Impostos = PIB nominal - VAB nominal
+# O SIDRA pode não cobrir os anos mais recentes; para esses pares geo×ano
+# ausentes ou com NA, usamos a identidade que é exata nas contas nacionais.
+pares_sidra <- impostos_nominal |>
+  filter(!is.na(valor)) |>
+  select(geo, ano) |>
+  distinct()
+
+pares_necessarios <- pib_nominal |>
+  select(geo, ano) |>
+  distinct()
+
+pares_faltando <- anti_join(pares_necessarios, pares_sidra, by = c("geo", "ano"))
+
+if (nrow(pares_faltando) > 0) {
+  anos_imputados <- sort(unique(pares_faltando$ano))
+  message("Imputando impostos (PIB - VAB) para ", nrow(pares_faltando),
+          " pares geo\u00d7ano sem dados SIDRA. Anos: ",
+          paste(anos_imputados, collapse = ", "))
+
+  impostos_imputados <- pares_faltando |>
+    left_join(pib_nominal |> select(geo, ano, pib = valor), by = c("geo", "ano")) |>
+    left_join(vab_nominal  |> select(geo, ano, vab = valor), by = c("geo", "ano")) |>
+    mutate(valor    = pib - vab,
+           variavel = "impostos_nominal") |>
+    select(geo, ano, valor, variavel)
+
+  impostos_nominal <- bind_rows(impostos_nominal, impostos_imputados) |>
+    arrange(geo, ano)
+} else {
+  message("Dados SIDRA cobrem todos os anos disponíveis. Nenhuma imputação necessária.")
+}
+
 # tab05: VAB volume encadeado por atividade (13 abas)
 message("Lendo tab05 (VAB volume por atividade)...")
 

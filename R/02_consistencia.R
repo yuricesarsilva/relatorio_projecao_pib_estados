@@ -174,16 +174,80 @@ if (nrow(grandes_desvios4) > 0) {
 }
 
 # ==============================================================================
+# Checagem 5 — Impostos: consistência e detecção de anos imputados
+# ==============================================================================
+# Impostos imputados em 01_leitura_dados.R via PIB - VAB produzem desvio
+# exatamente zero. Desvios não nulos indicam dado original do SIDRA — verifica-
+# se estão dentro de tolerância aceitável (diferenças de arredondamento).
+
+check5 <- base |>
+  filter(!is.na(pib_nominal), !is.na(vab_nominal), !is.na(impostos_nominal)) |>
+  mutate(
+    impostos_recalc = pib_nominal - vab_nominal,
+    desvio_abs      = impostos_nominal - impostos_recalc,
+    desvio_rel      = desvio_abs / impostos_nominal * 100,
+    # Valores imputados têm desvio praticamente zero (diferença < R$ 0,01 mi)
+    fonte           = if_else(abs(desvio_abs) < 0.01, "imputado (PIB-VAB)", "SIDRA")
+  )
+
+anos_imputados <- check5 |>
+  filter(fonte == "imputado (PIB-VAB)", geo_tipo == "brasil") |>
+  pull(ano) |>
+  sort() |>
+  unique()
+
+cat("\n=== Checagem 5: Impostos — Consistência e origem dos dados ===\n")
+cat("Anos com impostos imputados (PIB - VAB):",
+    if (length(anos_imputados) > 0) paste(anos_imputados, collapse = ", ")
+    else "nenhum", "\n")
+
+cat("\nDistribuição das fontes por ano (nível Brasil):\n")
+check5 |>
+  filter(geo_tipo == "brasil") |>
+  select(ano, impostos_nominal, impostos_recalc, desvio_abs, desvio_rel, fonte) |>
+  arrange(ano) |>
+  print(n = 30)
+
+cat("\nDesvio impostos_nominal vs. (PIB - VAB) — apenas anos SIDRA:\n")
+sidra_check <- check5 |> filter(fonte == "SIDRA")
+
+if (nrow(sidra_check) > 0) {
+  sidra_check |>
+    summarise(
+      min  = round(min(desvio_rel,  na.rm = TRUE), 4),
+      med  = round(mean(desvio_rel, na.rm = TRUE), 4),
+      max  = round(max(desvio_rel,  na.rm = TRUE), 4),
+      n_acima_1pct = sum(abs(desvio_rel) > 1, na.rm = TRUE)
+    ) |>
+    print()
+
+  grandes_desvios5 <- sidra_check |>
+    filter(abs(desvio_rel) > 1) |>
+    arrange(desc(abs(desvio_rel))) |>
+    select(geo, ano, impostos_nominal, impostos_recalc, desvio_abs, desvio_rel)
+
+  if (nrow(grandes_desvios5) > 0) {
+    cat("\nCasos com |desvio| > 1% (SIDRA vs. PIB - VAB):\n")
+    print(grandes_desvios5, n = 20)
+  } else {
+    cat("Nenhum desvio > 1% nos anos com dados SIDRA.\n")
+  }
+} else {
+  cat("Todos os anos foram imputados (sem dados SIDRA para comparação).\n")
+}
+
+# ==============================================================================
 # Salvar resultado das checagens
 # ==============================================================================
 
 dir.create("dados", showWarnings = FALSE)
 saveRDS(
   list(
-    pib_vab_impostos   = check1,
-    agregacao_regional = check2,
-    agregacao_nacional = check3,
-    vab_atividades     = check4
+    pib_vab_impostos        = check1,
+    agregacao_regional      = check2,
+    agregacao_nacional      = check3,
+    vab_atividades          = check4,
+    impostos_consistencia   = check5
   ),
   "dados/consistencia.rds"
 )
