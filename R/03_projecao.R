@@ -81,6 +81,13 @@ vab_macro <- cp |>
   ) |>
   ungroup()
 
+# Salvar série histórica de VAB por macrossetor para uso em outputs/gráficos
+saveRDS(
+  vab_macro |> select(geo, geo_tipo, regiao, macrossetor, ano,
+                      val_corrente, idx_volume, idx_preco),
+  "dados/vab_macro_hist.rds"
+)
+
 # Montar tibble unificado de séries: idx_volume, idx_preco e log(impostos)
 series_idx <- vab_macro |>
   filter(!is.na(idx_volume), !is.na(idx_preco)) |>

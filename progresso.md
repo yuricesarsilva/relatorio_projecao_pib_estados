@@ -151,6 +151,53 @@
 
 ---
 
+## Etapa 8 — Outputs completos: todos os territórios, IC 95%, todas as séries
+
+**O que foi feito:**
+- Modificado `R/03_projecao.R` para salvar `dados/vab_macro_hist.rds` com a série
+  histórica (2002–2023) de VAB nominal, idx_volume e idx_preco por macrossetor × geo,
+  necessária para os gráficos das séries brutas modeladas.
+- Reescrito `R/05_output.R` completamente com cobertura total de outputs:
+
+**Intervalos de confiança (IC 95%) calculados para:**
+- VAB por macrossetor: propaga CI dos índices de volume e preço (`idx_vol_lo95/hi95`,
+  `idx_prc_lo95/hi95`) já gravados em `vab_macro_reconciliado.rds`; aplica fator de
+  reconciliação de cada macrossetor.
+- VAB total: soma dos CI dos macrossetores.
+- Impostos: `exp(lo95/hi95 do log_impostos)` × fator_ajuste de reconciliação.
+- PIB nominal: `pib_ci = vab_ci + impostos_ci`.
+- Crescimento real: média ponderada dos `idx_vol_lo95/hi95` com pesos do VAB 2023.
+
+**Nova aba Excel — `Intervalos_Confianca`:**
+- Formato longo: Território, Ano, Variável, Ponto_central, LI_95%, LS_95%.
+- Cobre: pib_nominal, vab_nominal_total, impostos_nominal, cresc_real_pib_pct,
+  vab_agropecuaria, vab_industria, vab_adm_publica, vab_servicos.
+- Todos os 33 territórios × 8 anos projetados.
+
+**Aba VAB_macrossetor atualizada:** inclui agora histórico 2002–2023 + projetado
+2024–2031 (antes só tinha projetado).
+
+**Gráficos — estrutura completamente reformulada:**
+
+| Diretório | Conteúdo | Arquivos |
+|-----------|----------|---------|
+| `output/graficos/todas_geos/` | 1 plot por variável, todos os 33 territórios facetados com IC 95% | 9 |
+| `output/graficos/por_geo/` | 1 plot por território com 9 painéis: PIB, VAB, impostos, cresc. real, deflator, VAB por 4 macrossetores | 33 |
+| `output/graficos/series_brutas/` | Séries brutas modeladas (idx_volume e idx_preco por macrossetor + log_impostos) com CI 95%, todos os geos facetados | 9 |
+| `output/graficos/` | 5 gráficos de resumo atualizados (CI adicionado onde aplicável) | 5 |
+
+**Total de arquivos de gráfico: ~56 PNGs.**
+
+**Novo output gerado:**
+
+| Arquivo | Conteúdo |
+|---------|----------|
+| `dados/vab_macro_hist.rds` | VAB histórico por macrossetor × geo × ano (2002–2023) |
+
+**Arquivos modificados:** `R/03_projecao.R`, `R/05_output.R`
+
+---
+
 ## Etapa 7 — Tabela de seleção de modelos no output
 
 **O que foi feito:**
