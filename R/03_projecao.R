@@ -257,8 +257,14 @@ projecoes_brutas <- map_dfr(ids, function(sid) {
     MODELOS_FINAL[[modelo_nm]](ts_obj, H),
     error = function(e) {
       message("  Fallback ARIMA para: ", sid)
+      modelo_nm <<- "arima"
       MODELOS_FINAL$arima(ts_obj, H)
     }
+  )
+
+  parametros_str <- tryCatch(
+    if (!is.null(fc$method)) as.character(fc$method) else toupper(modelo_nm),
+    error = function(e) modelo_nm
   )
 
   meta <- dados_s |> distinct(geo, geo_tipo, regiao, macrossetor, variavel) |> slice(1)
@@ -271,6 +277,7 @@ projecoes_brutas <- map_dfr(ids, function(sid) {
     variavel    = meta$variavel,
     serie_id    = sid,
     modelo      = modelo_nm,
+    parametros  = parametros_str,
     ano         = seq(ANO_FIM + 1L, ANO_FIM + H),
     proj        = as.numeric(fc$mean),
     lo80        = if (!is.null(fc$lower)) as.numeric(fc$lower[, 1]) else NA_real_,
@@ -284,6 +291,17 @@ projecoes_brutas <- map_dfr(ids, function(sid) {
 
 saveRDS(projecoes_brutas, "dados/projecoes_brutas.rds")
 message("Projeções brutas: ", nrow(projecoes_brutas), " linhas")
+
+# Tabela de parâmetros: uma linha por série com modelo selecionado e parâmetros
+params_modelos <- projecoes_brutas |>
+  distinct(serie_id, geo, geo_tipo, regiao, macrossetor, variavel,
+           modelo, parametros) |>
+  left_join(
+    selecao_cv |> select(serie_id, mase_melhor, rmse_melhor, mae_melhor),
+    by = "serie_id"
+  )
+saveRDS(params_modelos, "dados/params_modelos.rds")
+message("Params modelos: ", nrow(params_modelos), " séries")
 
 # ==============================================================================
 # Parte 7 — Derivações contábeis

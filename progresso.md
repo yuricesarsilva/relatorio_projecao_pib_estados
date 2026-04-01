@@ -151,6 +151,39 @@
 
 ---
 
+## Etapa 7 — Tabela de seleção de modelos no output
+
+**O que foi feito:**
+- Modificado `R/03_projecao.R` (Parte 6) para capturar os parâmetros ótimos de cada
+  modelo ajustado durante a projeção final, via `fc$method` (retornado pelos objetos
+  de forecast do pacote `forecast`). Parâmetros incluem a ordem ARIMA(p,d,q),
+  tipo ETS(e,t,s), estrutura NNAR(p,k), etc.
+- Adicionado bloco ao final da Parte 6 que salva `dados/params_modelos.rds`:
+  uma linha por série com geo, macrossetor, variável, modelo selecionado,
+  parâmetros, MASE e RMSE.
+- Modificado `R/05_output.R` para carregar `params_modelos.rds` e gerar a aba
+  `Selecao_Modelos` no Excel, com rótulos legíveis para variável e macrossetor,
+  ordenada por unidade geográfica → macrossetor → variável.
+- Criado `CLAUDE.md` com instruções permanentes para Claude: atualizar `progresso.md`
+  e fazer commit + push após cada alteração no projeto.
+
+**Novo output gerado:**
+
+| Arquivo | Conteúdo |
+|---------|----------|
+| `dados/params_modelos.rds` | Modelo, parâmetros, MASE e RMSE por série (~297 linhas) |
+
+**Nova aba no Excel:**
+
+| Aba | Conteúdo |
+|-----|----------|
+| `Selecao_Modelos` | Unidade geográfica, macrossetor, variável, modelo selecionado, parâmetros ótimos, MASE e RMSE — ~297 linhas |
+
+**Arquivos modificados:** `R/03_projecao.R`, `R/05_output.R`
+**Arquivos criados:** `CLAUDE.md`
+
+---
+
 ## Pipeline completo (`run_all.R`)
 
 - Criado `run_all.R` para execução sequencial dos 5 scripts com tratamento de erros e cronometragem por etapa.

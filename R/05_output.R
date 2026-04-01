@@ -56,9 +56,11 @@ dir.create("output/graficos", showWarnings = FALSE, recursive = TRUE)
 # ==============================================================================
 
 message("Carregando dados...")
-esp      <- readRDS("dados/especiais.rds")
-proj_rec <- readRDS("dados/projecoes_reconciliadas.rds")
-vab_mac  <- readRDS("dados/vab_macro_reconciliado.rds")
+esp        <- readRDS("dados/especiais.rds")
+proj_rec   <- readRDS("dados/projecoes_reconciliadas.rds")
+vab_mac    <- readRDS("dados/vab_macro_reconciliado.rds")
+params_mod <- if (file.exists("dados/params_modelos.rds"))
+  readRDS("dados/params_modelos.rds") else NULL
 
 # ==============================================================================
 # Parte 2 — Séries históricas derivadas
@@ -284,6 +286,56 @@ freezePane(wb, "VAB_macrossetor", firstActiveRow = 3L, firstActiveCol = 3L)
 setColWidths(wb, "VAB_macrossetor", cols = 1:2, widths = 16)
 setColWidths(wb, "VAB_macrossetor", cols = 3:ncol(vab_macro_wide), widths = 14)
 
+# Aba Selecao_Modelos — modelo e parâmetros ótimos por série
+if (!is.null(params_mod)) {
+  rotulos_variavel <- c(
+    idx_volume   = "Índice de Volume (VAB real)",
+    idx_preco    = "Índice de Preço (Deflator)",
+    log_impostos = "Impostos nominais (log)"
+  )
+  rotulos_macro <- c(
+    agropecuaria = "Agropecuária",
+    industria    = "Indústria",
+    adm_publica  = "Adm. Pública",
+    servicos     = "Serviços",
+    total        = "Total (impostos)"
+  )
+
+  tab_modelos <- params_mod |>
+    mutate(
+      variavel_lbl    = rotulos_variavel[variavel],
+      macrossetor_lbl = rotulos_macro[macrossetor],
+      mase_melhor     = round(mase_melhor, 4),
+      rmse_melhor     = round(rmse_melhor, 6)
+    ) |>
+    select(
+      `Unidade Geografica` = geo,
+      `Macrossetor`        = macrossetor_lbl,
+      `Variavel`           = variavel_lbl,
+      `Modelo`             = modelo,
+      `Parametros`         = parametros,
+      `MASE`               = mase_melhor,
+      `RMSE`               = rmse_melhor
+    ) |>
+    arrange(`Unidade Geografica`, `Macrossetor`, `Variavel`)
+
+  addWorksheet(wb, "Selecao_Modelos")
+  writeData(wb, "Selecao_Modelos",
+            "Selecao de modelos — melhor modelo por serie (validacao cruzada, metrica MASE)",
+            startRow = 1, startCol = 1)
+  mergeCells(wb, "Selecao_Modelos", rows = 1, cols = 1:ncol(tab_modelos))
+  addStyle(wb, "Selecao_Modelos", st_titulo, rows = 1, cols = 1)
+  writeData(wb, "Selecao_Modelos", tab_modelos, startRow = 2)
+  addStyle(wb, "Selecao_Modelos", st_header,
+           rows = 2, cols = 1:ncol(tab_modelos), gridExpand = TRUE)
+  addStyle(wb, "Selecao_Modelos", st_num,
+           rows = 3:(2 + nrow(tab_modelos)),
+           cols = 6:7, gridExpand = TRUE)
+  freezePane(wb, "Selecao_Modelos", firstActiveRow = 3L, firstActiveCol = 2L)
+  setColWidths(wb, "Selecao_Modelos", cols = 1:5, widths = c(22, 18, 28, 14, 28))
+  setColWidths(wb, "Selecao_Modelos", cols = 6:7, widths = c(10, 12))
+}
+
 saveWorkbook(wb, "output/tabelas/projecoes_pib_estadual.xlsx", overwrite = TRUE)
 message("Salvo: output/tabelas/projecoes_pib_estadual.xlsx")
 
@@ -460,7 +512,7 @@ message("\n=== Outputs gerados ===")
 message("Planilha Excel:")
 message("  output/tabelas/projecoes_pib_estadual.xlsx")
 message("  Abas: PIB_nominal | VAB_nominal | Impostos_nominais |",
-        " Cresc_real_PIB | Deflator_PIB | VAB_macrossetor")
+        " Cresc_real_PIB | Deflator_PIB | VAB_macrossetor | Selecao_Modelos")
 message("Gráficos (output/graficos/):")
 for (f in c("pib_nominal_brasil.png", "cresc_real_regioes.png",
             "pib_nominal_roraima.png", "fatores_ajuste.png",
