@@ -2,6 +2,7 @@
 title: "Projeções PIB Estadual 2024–2031"
 format:
   dashboard:
+    output-file: index.html
     theme:
       light: flatly
       dark: darkly
