@@ -28,7 +28,7 @@ jobs:
           r-version: "release"
 
       - name: Instalar pacotes R
-        run: Rscript -e 'install.packages(c("knitr", "rmarkdown"), repos="https://cloud.r-project.org")'
+        run: Rscript -e 'install.packages(c("knitr", "rmarkdown", "shinylive"), repos="https://cloud.r-project.org")'
 
       # Quarto CLI
       - name: Instalar Quarto
