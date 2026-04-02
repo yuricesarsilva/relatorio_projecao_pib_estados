@@ -4,6 +4,10 @@ if (!requireNamespace("openxlsx", quietly = TRUE))
   install.packages("openxlsx", repos = "https://cloud.r-project.org")
 library(openxlsx)
 
+if (!requireNamespace("RColorBrewer", quietly = TRUE))
+  install.packages("RColorBrewer", repos = "https://cloud.r-project.org")
+library(RColorBrewer)
+
 # ==============================================================================
 # 05_output.R
 #
@@ -12,19 +16,22 @@ library(openxlsx)
 #
 # Entradas:  dados/especiais.rds
 #            dados/projecoes_reconciliadas.rds
-#            dados/vab_macro_reconciliado.rds   (tem colunas CI dos índices)
-#            dados/projecoes_brutas.rds          (para CI de log_impostos)
-#            dados/vab_macro_hist.rds            (série histórica por macrossetor)
-#            dados/params_modelos.rds            (seleção de modelos)
+#            dados/vab_macro_reconciliado.rds      (tem colunas CI dos índices)
+#            dados/projecoes_brutas.rds             (para CI de log_impostos)
+#            dados/vab_macro_hist.rds               (série histórica por macro)
+#            dados/vab_atividade_hist.rds           (série histórica por atividade)
+#            dados/vab_atividade_reconciliada.rds   (projetado+CI por atividade)
+#            dados/params_modelos.rds               (seleção de modelos)
 #
 # Saídas:
 #   output/tabelas/projecoes_pib_estadual.xlsx
 #     Abas: PIB_nominal | VAB_nominal | Impostos_nominais | Cresc_real_PIB |
-#           Deflator_PIB | VAB_macrossetor | Intervalos_Confianca |
-#           Selecao_Modelos
-#   output/graficos/todas_geos/   (9 plots facetados: todos os 33 territórios)
-#   output/graficos/por_geo/      (33 plots: todas as variáveis por território)
-#   output/graficos/series_brutas/(9 plots: séries modeladas diretamente com CI)
+#           Deflator_PIB | VAB_macrossetor | VAB_atividade |
+#           Intervalos_Confianca | Selecao_Modelos
+#   output/graficos/todas_geos/        (21 plots: 9 macro/agg + 12 atividades)
+#   output/graficos/por_geo/           (33 plots: todas as variáveis)
+#   output/graficos/por_geo_atividade/ (33 stacked-area plots VAB por atividade)
+#   output/graficos/series_brutas/     (9 plots: séries brutas com CI)
 # ==============================================================================
 
 # ==============================================================================
@@ -51,9 +58,28 @@ GEO_AGREGADO <- c("Brasil", "Norte", "Nordeste", "Sudeste", "Sul", "Centro-Oeste
 for (d in c("output/tabelas", "output/graficos",
             "output/graficos/todas_geos",
             "output/graficos/por_geo",
+            "output/graficos/por_geo_atividade",
             "output/graficos/series_brutas")) {
   dir.create(d, showWarnings = FALSE, recursive = TRUE)
 }
+
+# Rótulos legíveis das 12 atividades individuais
+ATIVIDADE_LABEL <- c(
+  agropecuaria           = "Agropecuária",
+  ind_extrativa          = "Ind. Extrativas",
+  ind_transformacao      = "Ind. de Transformação",
+  eletricidade_gas_agua  = "Eletricidade/Gás/Água",
+  construcao             = "Construção",
+  comercio_veiculos      = "Comércio e Veículos",
+  transporte_armazenagem = "Transporte e Armazenagem",
+  informacao_comunicacao = "Informação e Comunicação",
+  financeiro_seguros     = "Financeiro e Seguros",
+  imobiliaria            = "Atividades Imobiliárias",
+  adm_publica            = "Adm. Pública",
+  outros_servicos        = "Outros Serviços"
+)
+
+ATIVIDADES <- names(ATIVIDADE_LABEL)
 
 # ==============================================================================
 # Parte 1 — Carregar dados
@@ -64,10 +90,14 @@ esp         <- readRDS("dados/especiais.rds")
 proj_rec    <- readRDS("dados/projecoes_reconciliadas.rds")
 vab_mac     <- readRDS("dados/vab_macro_reconciliado.rds")
 proj_brutas <- readRDS("dados/projecoes_brutas.rds")
-params_mod  <- if (file.exists("dados/params_modelos.rds"))
+params_mod   <- if (file.exists("dados/params_modelos.rds"))
   readRDS("dados/params_modelos.rds") else NULL
-vab_hist    <- if (file.exists("dados/vab_macro_hist.rds"))
+vab_hist     <- if (file.exists("dados/vab_macro_hist.rds"))
   readRDS("dados/vab_macro_hist.rds") else NULL
+vab_ativ_hist <- if (file.exists("dados/vab_atividade_hist.rds"))
+  readRDS("dados/vab_atividade_hist.rds") else NULL
+vab_ativ_rec  <- if (file.exists("dados/vab_atividade_reconciliada.rds"))
+  readRDS("dados/vab_atividade_reconciliada.rds") else NULL
 
 geo_ref <- esp |> distinct(geo, geo_tipo, regiao)
 
@@ -277,6 +307,43 @@ vab_macro_wide <- vab_mac_full |>
   arrange(macrossetor, ano) |>
   pivot_wider(names_from = geo, values_from = vab_nominal)
 
+# VAB por atividade: histórico + projetado reconciliado (wide)
+if (!is.null(vab_ativ_rec) && !is.null(vab_ativ_hist)) {
+  vab_ativ_full <- bind_rows(
+    vab_ativ_hist |>
+      select(geo, atividade, ano, vab_nominal = val_corrente),
+    vab_ativ_rec  |>
+      select(geo, atividade, ano, vab_nominal)
+  )
+} else if (!is.null(vab_ativ_rec)) {
+  vab_ativ_full <- vab_ativ_rec |> select(geo, atividade, ano, vab_nominal)
+} else {
+  vab_ativ_full <- NULL
+}
+
+ATIV_MACRO_MAP <- tibble(
+  atividade   = ATIVIDADES,
+  macrossetor = c(
+    "agropecuaria",
+    "industria", "industria", "industria", "industria",
+    "servicos", "servicos", "servicos", "servicos", "servicos",
+    "adm_publica",
+    "servicos"
+  )
+)
+
+vab_ativ_wide <- if (!is.null(vab_ativ_full)) {
+  vab_ativ_full |>
+    filter(geo %in% GEO_ORDER) |>
+    left_join(ATIV_MACRO_MAP, by = "atividade") |>
+    mutate(
+      geo         = factor(geo, levels = GEO_ORDER),
+      vab_nominal = round(vab_nominal, 0)
+    ) |>
+    arrange(macrossetor, atividade, ano) |>
+    pivot_wider(names_from = geo, values_from = vab_nominal)
+} else { NULL }
+
 # IC em formato longo para aba dedicada
 ic_long <- bind_rows(
   proj_rec |>
@@ -313,6 +380,21 @@ ic_long <- bind_rows(
   filter(geo %in% GEO_ORDER) |>
   mutate(geo = factor(geo, levels = GEO_ORDER)) |>
   arrange(variavel, geo, ano)
+
+# Adicionar IC das atividades ao ic_long
+if (!is.null(vab_ativ_rec)) {
+  ic_ativ <- vab_ativ_rec |>
+    filter(geo %in% GEO_ORDER) |>
+    transmute(geo, ano,
+              variavel = paste0("vab_ativ_", atividade),
+              ponto = round(vab_nominal, 0),
+              li_95 = round(coalesce(vab_lo95, vab_nominal), 0),
+              ls_95 = round(coalesce(vab_hi95, vab_nominal), 0)) |>
+    mutate(geo = factor(geo, levels = GEO_ORDER))
+
+  ic_long <- bind_rows(ic_long, ic_ativ) |>
+    arrange(variavel, geo, ano)
+}
 
 # ==============================================================================
 # Parte 4 — Exportar planilha Excel
@@ -401,13 +483,38 @@ freezePane(wb, "VAB_macrossetor", firstActiveRow = 3L, firstActiveCol = 3L)
 setColWidths(wb, "VAB_macrossetor", cols = 1:2, widths = 16)
 setColWidths(wb, "VAB_macrossetor", cols = 3:ncol(vab_macro_wide), widths = 14)
 
+# Aba VAB_atividade (histórico + projetado por atividade individual)
+if (!is.null(vab_ativ_wide)) {
+  addWorksheet(wb, "VAB_atividade")
+  writeData(wb, "VAB_atividade",
+            "VAB por atividade econômica — R$ milhões (histórico 2002–2023 + projetado 2024–2031)",
+            startRow = 1, startCol = 1)
+  mergeCells(wb, "VAB_atividade", rows = 1, cols = 1:ncol(vab_ativ_wide))
+  addStyle(wb, "VAB_atividade", st_titulo, rows = 1, cols = 1)
+  writeData(wb, "VAB_atividade", vab_ativ_wide, startRow = 2)
+  addStyle(wb, "VAB_atividade", st_header,
+           rows = 2, cols = 1:ncol(vab_ativ_wide), gridExpand = TRUE)
+  addStyle(wb, "VAB_atividade", st_num,
+           rows = 3:(2 + nrow(vab_ativ_wide)),
+           cols = 4:ncol(vab_ativ_wide), gridExpand = TRUE)
+  n_hist_ativ <- sum(vab_ativ_wide$ano <= ANO_HIST_FIM, na.rm = TRUE)
+  if (n_hist_ativ > 0 && n_hist_ativ < nrow(vab_ativ_wide)) {
+    addStyle(wb, "VAB_atividade", st_sep,
+             rows = 2 + n_hist_ativ, cols = 1:ncol(vab_ativ_wide),
+             gridExpand = TRUE, stack = TRUE)
+  }
+  freezePane(wb, "VAB_atividade", firstActiveRow = 3L, firstActiveCol = 4L)
+  setColWidths(wb, "VAB_atividade", cols = 1:3, widths = c(16, 24, 6))
+  setColWidths(wb, "VAB_atividade", cols = 4:ncol(vab_ativ_wide), widths = 14)
+}
+
 # Aba Intervalos_Confianca (formato longo, período projetado, IC 95%)
 addWorksheet(wb, "Intervalos_Confianca")
 writeData(wb, "Intervalos_Confianca",
           paste0("Intervalos de confiança 95% — Projeções ",
                  ANO_HIST_FIM + 1L, "–", ANO_PROJ_FIM,
                  " | pib_nominal, vab_nominal_total, impostos_nominal, ",
-                 "cresc_real_pib_pct, vab_{macrossetor}"),
+                 "cresc_real_pib_pct, vab_{macrossetor}, vab_ativ_{atividade}"),
           startRow = 1, startCol = 1)
 mergeCells(wb, "Intervalos_Confianca", rows = 1, cols = 1:6)
 addStyle(wb, "Intervalos_Confianca", st_titulo, rows = 1, cols = 1)
@@ -440,21 +547,27 @@ if (!is.null(params_mod)) {
   )
   tab_modelos <- params_mod |>
     mutate(
-      variavel_lbl    = rotulos_variavel[variavel],
-      macrossetor_lbl = rotulos_macro[macrossetor],
-      mase_melhor     = round(mase_melhor, 4),
-      rmse_melhor     = round(rmse_melhor, 6)
+      variavel_lbl = rotulos_variavel[variavel],
+      setor_lbl    = case_when(
+        !is.na(atividade) ~
+          paste0("Ativ: ", coalesce(ATIVIDADE_LABEL[atividade], atividade)),
+        !is.na(macrossetor) ~
+          paste0("Macro: ", coalesce(rotulos_macro[macrossetor], macrossetor)),
+        TRUE ~ NA_character_
+      ),
+      mase_melhor = round(mase_melhor, 4),
+      rmse_melhor = round(rmse_melhor, 6)
     ) |>
     select(
       `Unidade Geografica` = geo,
-      `Macrossetor`        = macrossetor_lbl,
+      `Setor/Atividade`    = setor_lbl,
       `Variavel`           = variavel_lbl,
       `Modelo`             = modelo,
       `Parametros`         = parametros,
       `MASE`               = mase_melhor,
       `RMSE`               = rmse_melhor
     ) |>
-    arrange(`Unidade Geografica`, `Macrossetor`, `Variavel`)
+    arrange(`Unidade Geografica`, `Setor/Atividade`, `Variavel`)
   addWorksheet(wb, "Selecao_Modelos")
   writeData(wb, "Selecao_Modelos",
             "Selecao de modelos — melhor modelo por serie (validacao cruzada, metrica MASE)",
@@ -467,7 +580,7 @@ if (!is.null(params_mod)) {
   addStyle(wb, "Selecao_Modelos", st_num,
            rows = 3:(2 + nrow(tab_modelos)), cols = 6:7, gridExpand = TRUE)
   freezePane(wb, "Selecao_Modelos", firstActiveRow = 3L, firstActiveCol = 2L)
-  setColWidths(wb, "Selecao_Modelos", cols = 1:5, widths = c(22, 18, 28, 14, 28))
+  setColWidths(wb, "Selecao_Modelos", cols = 1:5, widths = c(22, 24, 28, 14, 28))
   setColWidths(wb, "Selecao_Modelos", cols = 6:7, widths = c(10, 12))
 }
 
@@ -696,7 +809,40 @@ for (mac in names(MACRO_LABEL)) {
   ggsave(paste0("output/graficos/todas_geos/vab_", mac, ".png"),
          g_m, width = 22, height = 22, dpi = 150)
 }
-message("    todas_geos: 9 arquivos gerados.")
+message("    todas_geos: 9 arquivos gerados (macro/agregados).")
+
+# VAB por atividade individual — um plot por atividade (todos os geos)
+if (!is.null(vab_ativ_rec)) {
+  vab_ativ_comb <- bind_rows(
+    if (!is.null(vab_ativ_hist)) {
+      vab_ativ_hist |>
+        filter(geo %in% GEO_ORDER) |>
+        transmute(geo, atividade, ano, valor = val_corrente,
+                  lo95 = NA_real_, hi95 = NA_real_, tipo = "Histórico")
+    } else { tibble() },
+    vab_ativ_rec |>
+      filter(geo %in% GEO_ORDER) |>
+      transmute(geo, atividade, ano, valor = vab_nominal,
+                lo95 = coalesce(vab_lo95, vab_nominal),
+                hi95 = coalesce(vab_hi95, vab_nominal),
+                tipo = "Projetado")
+  ) |>
+    mutate(geo = factor(geo, levels = GEO_ORDER))
+
+  for (ativ in ATIVIDADES) {
+    df_a <- vab_ativ_comb |> filter(atividade == ativ)
+    if (nrow(df_a) == 0) next
+    g_a <- plot_facet_geo(
+      df_a |> select(geo, ano, valor, lo95, hi95, tipo), "R$ bilhões",
+      paste0("VAB — ", ATIVIDADE_LABEL[ativ], " — Todos os territórios"),
+      "R$ bilhões (correntes) | Histórico 2002–2023 + Projeção 2024–2031 com IC 95%",
+      divisor = 1e3
+    )
+    ggsave(paste0("output/graficos/todas_geos/vab_ativ_", ativ, ".png"),
+           g_a, width = 22, height = 22, dpi = 150)
+  }
+  message("    todas_geos: 12 plots de atividades gerados.")
+}
 
 # ==============================================================================
 # 5.2 — Gráficos "por_geo": 33 plots com todas as variáveis por território
@@ -901,7 +1047,63 @@ ggsave("output/graficos/series_brutas/log_impostos.png",
 message("    series_brutas: arquivos gerados.")
 
 # ==============================================================================
-# 5.4 — Gráficos de resumo (todas as regiões/Brasil, comparativos)
+# 5.4 — Gráficos "por_geo_atividade": 33 stacked-area plots por território
+# ==============================================================================
+
+if (!is.null(vab_ativ_full)) {
+  message("  Gerando plots por_geo_atividade (33 arquivos)...")
+
+  # Paleta fixa para 12 atividades (RColorBrewer "Paired" tem exatamente 12)
+  PALETA_ATIV <- setNames(
+    RColorBrewer::brewer.pal(12, "Paired"),
+    ATIVIDADES
+  )
+
+  for (geo_name in GEO_ORDER) {
+    df_ga <- vab_ativ_full |>
+      filter(geo == geo_name) |>
+      mutate(
+        ativ_label = factor(ATIVIDADE_LABEL[atividade], levels = ATIVIDADE_LABEL),
+        tipo       = if_else(ano <= ANO_HIST_FIM, "Histórico", "Projetado")
+      )
+    if (nrow(df_ga) == 0) next
+
+    geo_safe <- iconv(geo_name, to = "ASCII//TRANSLIT")
+    geo_safe <- gsub("[^a-zA-Z0-9_]", "_", geo_safe)
+
+    g_ga <- ggplot(df_ga,
+                   aes(x = ano, y = vab_nominal / 1e3, fill = ativ_label)) +
+      geom_area(position = "stack", alpha = 0.85) +
+      vl +
+      scale_fill_manual(values = setNames(PALETA_ATIV, ATIVIDADE_LABEL),
+                        name = "Atividade") +
+      scale_x_continuous(breaks = c(2005, 2010, 2015, 2020, ANO_PROJ_FIM)) +
+      scale_y_continuous(
+        labels = scales::label_number(big.mark = ".", decimal.mark = ",")
+      ) +
+      labs(
+        title    = paste0("VAB por Atividade — ", geo_name),
+        subtitle = paste0("R$ bilhões (correntes) | Histórico ",
+                          ANO_HIST_INI, "–", ANO_HIST_FIM,
+                          " + Projeção ", ANO_HIST_FIM + 1L, "–", ANO_PROJ_FIM),
+        x = NULL, y = "R$ bilhões",
+        caption  = "Fonte: IBGE (histórico); projeção própria com reconciliação top-down."
+      ) +
+      tema +
+      theme(legend.position = "right",
+            legend.key.size  = unit(0.4, "cm"),
+            legend.text      = element_text(size = 7))
+
+    ggsave(
+      paste0("output/graficos/por_geo_atividade/", geo_safe, ".png"),
+      g_ga, width = 14, height = 7, dpi = 150
+    )
+  }
+  message("    por_geo_atividade: 33 arquivos gerados.")
+}
+
+# ==============================================================================
+# 5.5 — Gráficos de resumo (todas as regiões/Brasil, comparativos)
 # ==============================================================================
 
 REGIOES_BR <- c("Brasil", "Norte", "Nordeste", "Sudeste", "Sul", "Centro-Oeste")
@@ -1026,18 +1228,28 @@ ggsave("output/graficos/participacao_pib_estados.png",
 # Parte 6 — Resumo
 # ==============================================================================
 
-n_por_geo     <- length(GEO_ORDER)
-n_todas_geos  <- 9L  # 5 variáveis + 4 VAB macro
-n_series_brut <- if (!is.null(vab_hist)) 9L else 1L  # 4 idx_vol + 4 idx_prc + 1 impostos
-n_resumo      <- 5L
+n_por_geo       <- length(GEO_ORDER)
+n_todas_geos    <- 9L + if (!is.null(vab_ativ_rec)) 12L else 0L
+n_series_brut   <- if (!is.null(vab_hist)) 9L else 1L
+n_por_geo_ativ  <- if (!is.null(vab_ativ_full)) length(GEO_ORDER) else 0L
+n_resumo        <- 5L
+tem_ativ_aba    <- !is.null(vab_ativ_wide)
 
 message("\n=== Outputs gerados ===")
 message("Planilha Excel: output/tabelas/projecoes_pib_estadual.xlsx")
 message("  Abas: PIB_nominal | VAB_nominal | Impostos_nominais | Cresc_real_PIB |",
-        " Deflator_PIB | VAB_macrossetor | Intervalos_Confianca | Selecao_Modelos")
+        " Deflator_PIB | VAB_macrossetor",
+        if (tem_ativ_aba) " | VAB_atividade" else "",
+        " | Intervalos_Confianca | Selecao_Modelos")
 message("Gráficos:")
-message("  output/graficos/todas_geos/  — ", n_todas_geos, " plots (todos os 33 territórios facetados)")
-message("  output/graficos/por_geo/     — ", n_por_geo, " plots (1 por território, 9 variáveis)")
-message("  output/graficos/series_brutas/ — ", n_series_brut, " plots (séries brutas com CI)")
-message("  output/graficos/             — ", n_resumo, " plots de resumo atualizados")
+message("  output/graficos/todas_geos/       — ", n_todas_geos,
+        " plots (9 macro/agregados + 12 atividades)")
+message("  output/graficos/por_geo/          — ", n_por_geo,
+        " plots (1 por território, todas variáveis)")
+message("  output/graficos/por_geo_atividade/— ", n_por_geo_ativ,
+        " plots (stacked area por território)")
+message("  output/graficos/series_brutas/    — ", n_series_brut,
+        " plots (séries brutas com CI)")
+message("  output/graficos/                  — ", n_resumo,
+        " plots de resumo")
 message("\n05_output.R concluído.")

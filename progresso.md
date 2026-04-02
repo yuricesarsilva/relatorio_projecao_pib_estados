@@ -231,6 +231,69 @@
 
 ---
 
+## Etapa 9 — VAB por atividade econômica individual
+
+**O que foi feito:**
+- Implementada modelagem direta das 12 atividades IBGE (excluindo "total"), usando
+  `idx_volume` e `idx_preco` provenientes de `conta_producao.rds` (Conta da Produção).
+  As séries de atividade **não** são derivadas proporcionalmente dos macrossetores —
+  cada atividade é modelada independentemente.
+
+**Modificações em `R/03_projecao.R`:**
+- Adicionado vetor `ATIVIDADES` com 12 códigos de atividade.
+- `series_ativ` construída a partir de `cp` (conta_producao), pivotando
+  `idx_volume` e `idx_preco` para formato longo.
+- `serie_id` com prefixo `ativ__` para evitar colisão com macrossetores
+  (ex.: `"Roraima|ativ__agropecuaria|idx_volume"`).
+- Acrescentadas ~792 séries ao loop de CV expanding-window (~1.089 total).
+- Nova Parte 7b: deriva `vab_nominal`, `vab_lo95`, `vab_hi95` por atividade,
+  usando `vab_2023` × `cumprod(idx_volume × idx_preco)` com propagação de CI.
+- Salvo `dados/vab_atividade_hist.rds` (histórico) e `dados/vab_atividade_proj.rds`.
+- Coluna `atividade` adicionada a `params_modelos.rds` (NA para séries macro/impostos).
+
+**Modificações em `R/04_reconciliacao.R`:**
+- Nova Parte 6b: reconcilia VAB por atividade (mesma abordagem proporcional
+  de 6a — soma das atividades → VAB total reconciliado).
+- Aplica fator `fator_ativ` ao ponto central e a `vab_lo95`/`vab_hi95`.
+- Verificação: desvio soma atividades vs. VAB total reconciliado < 0,00000001%.
+- Salvo `dados/vab_atividade_reconciliada.rds`.
+
+**Modificações em `R/05_output.R`:**
+- Nova aba Excel **`VAB_atividade`**: macrossetor | atividade | ano | 33 geos;
+  histórico 2002–2023 + projetado 2024–2031 com linha separadora.
+- Aba **`Intervalos_Confianca`** estendida com IC 95% das 12 atividades
+  (`variavel = vab_ativ_{atividade}`) para todos os 33 geos × 8 anos.
+- Aba **`Selecao_Modelos`** atualizada: coluna "Setor/Atividade" distingue
+  séries de macrossetor ("Macro: ...") de atividade ("Ativ: ...").
+- 12 novos plots `output/graficos/todas_geos/vab_ativ_{atividade}.png`
+  (todos os 33 geos facetados, ribbon IC 95%).
+- 33 novos plots `output/graficos/por_geo_atividade/{geo}.png`
+  (stacked-area VAB por atividade, histórico + projetado).
+
+**Nota:** Deletar `dados/selecao_modelos.rds` antes de re-executar o pipeline
+para que o CV seja refeito com as 1.089 séries completas.
+
+**Outputs gerados:**
+
+| Arquivo | Conteúdo |
+|---------|----------|
+| `dados/vab_atividade_hist.rds` | VAB histórico (val_corrente) por atividade × geo × ano (2002–2023) |
+| `dados/vab_atividade_proj.rds` | VAB projetado + IC 95% por atividade × geo × ano (2024–2031) |
+| `dados/vab_atividade_reconciliada.rds` | VAB atividade reconciliado + IC 95% (2024–2031) |
+
+**Nova aba Excel e novos gráficos:**
+
+| Saída | Conteúdo |
+|-------|----------|
+| `VAB_atividade` (aba Excel) | 12 atividades × 33 geos × 30 anos (histórico + projetado) |
+| `Intervalos_Confianca` (aba Excel, estendida) | +12 variáveis vab_ativ_* × 33 geos × 8 anos |
+| `output/graficos/todas_geos/vab_ativ_*.png` | 12 plots, todos os geos facetados com IC 95% |
+| `output/graficos/por_geo_atividade/*.png` | 33 plots stacked-area por território |
+
+**Arquivos modificados:** `R/03_projecao.R`, `R/04_reconciliacao.R`, `R/05_output.R`
+
+---
+
 ## Pipeline completo (`run_all.R`)
 
 - Criado `run_all.R` para execução sequencial dos 5 scripts com tratamento de erros e cronometragem por etapa.

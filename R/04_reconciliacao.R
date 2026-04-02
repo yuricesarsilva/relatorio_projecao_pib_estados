@@ -208,6 +208,49 @@ message("Salvo: dados/vab_macro_reconciliado.rds  (",
         nrow(vab_macro_rec), " linhas)")
 
 # ==============================================================================
+# Parte 6b — Reconciliar VAB por atividade individual
+# ==============================================================================
+# Escalonar VAB por atividade para que a soma (por geo × ano) iguale o VAB total
+# reconciliado. Aplica o mesmo fator proporcional a ponto central e IC 95%.
+
+if (file.exists("dados/vab_atividade_proj.rds")) {
+  message("Reconciliando VAB por atividade...")
+
+  vab_ativ_proj   <- readRDS("dados/vab_atividade_proj.rds")
+  vab_total_rec_ref <- projecoes_rec |>
+    select(geo, ano, vab_total_rec = vab_nominal_total)
+
+  vab_ativ_rec <- vab_ativ_proj |>
+    group_by(geo, ano) |>
+    mutate(soma_ativ = sum(vab_nominal, na.rm = TRUE)) |>
+    ungroup() |>
+    left_join(vab_total_rec_ref, by = c("geo", "ano")) |>
+    mutate(
+      fator_ativ  = if_else(soma_ativ > 0, vab_total_rec / soma_ativ, 1),
+      vab_nominal = vab_nominal * fator_ativ,
+      vab_lo95    = vab_lo95    * fator_ativ,
+      vab_hi95    = vab_hi95    * fator_ativ
+    ) |>
+    select(-soma_ativ, -vab_total_rec, -fator_ativ)
+
+  saveRDS(vab_ativ_rec, "dados/vab_atividade_reconciliada.rds")
+  message("Salvo: dados/vab_atividade_reconciliada.rds  (",
+          nrow(vab_ativ_rec), " linhas)")
+
+  # Verificação: soma das atividades = VAB total reconciliado
+  check_ativ <- vab_ativ_rec |>
+    group_by(geo, ano) |>
+    summarise(soma_rec = sum(vab_nominal, na.rm = TRUE), .groups = "drop") |>
+    left_join(vab_total_rec_ref, by = c("geo", "ano")) |>
+    mutate(desvio_pct = abs(soma_rec - vab_total_rec) / vab_total_rec * 100)
+  cat("Soma atividades = VAB total reconciliado:\n")
+  cat("  desvio máximo =",
+      round(max(check_ativ$desvio_pct, na.rm = TRUE), 8), "%\n")
+} else {
+  message("vab_atividade_proj.rds não encontrado — pulando reconciliação de atividades.")
+}
+
+# ==============================================================================
 # Parte 7 — Verificações de consistência
 # ==============================================================================
 

@@ -88,26 +88,60 @@ saveRDS(
   "dados/vab_macro_hist.rds"
 )
 
+# Lista das 12 atividades individuais a modelar (exclui "total")
+ATIVIDADES <- c(
+  "agropecuaria", "ind_extrativa", "ind_transformacao",
+  "eletricidade_gas_agua", "construcao", "comercio_veiculos",
+  "transporte_armazenagem", "informacao_comunicacao",
+  "financeiro_seguros", "imobiliaria", "adm_publica", "outros_servicos"
+)
+
+# Salvar série histórica de VAB por atividade para outputs/gráficos
+saveRDS(
+  cp |>
+    filter(bloco == "vab", atividade %in% ATIVIDADES) |>
+    select(geo, geo_tipo, regiao, atividade, ano,
+           val_corrente, idx_volume, idx_preco),
+  "dados/vab_atividade_hist.rds"
+)
+
 # Montar tibble unificado de séries: idx_volume, idx_preco e log(impostos)
 series_idx <- vab_macro |>
   filter(!is.na(idx_volume), !is.na(idx_preco)) |>
   select(geo, geo_tipo, regiao, macrossetor, ano, idx_volume, idx_preco) |>
   pivot_longer(c(idx_volume, idx_preco), names_to = "variavel", values_to = "valor") |>
   filter(!is.na(valor)) |>
-  mutate(serie_id = paste(geo, macrossetor, variavel, sep = "|"))
+  mutate(
+    atividade = NA_character_,
+    serie_id  = paste(geo, macrossetor, variavel, sep = "|")
+  )
 
 series_imp <- impostos_df |>
   mutate(
     macrossetor = "total",
+    atividade   = NA_character_,
     variavel    = "log_impostos",
     valor       = log(valor),
     serie_id    = paste(geo, "total", "log_impostos", sep = "|")
   ) |>
-  select(geo, geo_tipo, regiao, macrossetor, ano, variavel, valor, serie_id)
+  select(geo, geo_tipo, regiao, macrossetor, atividade, ano, variavel, valor, serie_id)
 
-todas_series <- bind_rows(series_idx, series_imp)
+# Séries de atividade individual (12 atividades × 33 geos × 2 variáveis ≈ 792 séries)
+# Fonte: índices idx_volume e idx_preco diretos da Conta da Produção (IBGE)
+series_ativ <- cp |>
+  filter(bloco == "vab", atividade %in% ATIVIDADES,
+         !is.na(idx_volume), !is.na(idx_preco)) |>
+  select(geo, geo_tipo, regiao, atividade, ano, idx_volume, idx_preco) |>
+  pivot_longer(c(idx_volume, idx_preco), names_to = "variavel", values_to = "valor") |>
+  filter(!is.na(valor)) |>
+  left_join(ativ_macro, by = "atividade") |>   # adiciona coluna macrossetor
+  mutate(serie_id = paste(geo, paste0("ativ__", atividade), variavel, sep = "|"))
+
+todas_series <- bind_rows(series_idx, series_imp, series_ativ)
 ids <- unique(todas_series$serie_id)
-message("Total de séries a modelar: ", length(ids))
+message("Total de séries a modelar: ", length(ids),
+        "  (macro: ", nrow(series_idx) / 2L + nrow(series_imp),
+        " | atividade: ", nrow(series_ativ) / 2L, ")")
 
 # ==============================================================================
 # Parte 2 — Funções dos modelos
@@ -274,13 +308,16 @@ projecoes_brutas <- map_dfr(ids, function(sid) {
     error = function(e) modelo_nm
   )
 
-  meta <- dados_s |> distinct(geo, geo_tipo, regiao, macrossetor, variavel) |> slice(1)
+  meta <- dados_s |>
+    distinct(geo, geo_tipo, regiao, macrossetor, atividade, variavel) |>
+    slice(1)
 
   tibble(
     geo         = meta$geo,
     geo_tipo    = meta$geo_tipo,
     regiao      = meta$regiao,
     macrossetor = meta$macrossetor,
+    atividade   = meta$atividade,
     variavel    = meta$variavel,
     serie_id    = sid,
     modelo      = modelo_nm,
@@ -301,7 +338,7 @@ message("Projeções brutas: ", nrow(projecoes_brutas), " linhas")
 
 # Tabela de parâmetros: uma linha por série com modelo selecionado e parâmetros
 params_modelos <- projecoes_brutas |>
-  distinct(serie_id, geo, geo_tipo, regiao, macrossetor, variavel,
+  distinct(serie_id, geo, geo_tipo, regiao, macrossetor, atividade, variavel,
            modelo, parametros) |>
   left_join(
     selecao_cv |> select(serie_id, mase_melhor, rmse_melhor, mae_melhor),
@@ -417,14 +454,65 @@ projecoes_derivadas <- pib_proj |>
 saveRDS(projecoes_derivadas, "dados/projecoes_derivadas.rds")
 
 # ==============================================================================
+# Parte 7b — VAB nominal por atividade individual
+# ==============================================================================
+# Fonte: idx_volume e idx_preco diretamente da Conta da Produção (IBGE),
+# modelados individualmente por atividade × geo no loop de CV acima.
+
+message("Calculando VAB nominal por atividade...")
+
+# Base 2023: VAB a preço corrente por atividade × geo
+base_2023_ativ <- cp |>
+  filter(bloco == "vab", atividade %in% ATIVIDADES, ano == ANO_FIM) |>
+  select(geo, atividade, vab_2023_ativ = val_corrente)
+
+# Índices projetados: filtrar séries de atividade (!is.na(atividade))
+proj_vol_ativ <- projecoes_brutas |>
+  filter(variavel == "idx_volume", !is.na(atividade)) |>
+  select(geo, atividade, macrossetor, ano,
+         idx_volume   = proj,
+         idx_vol_lo95 = lo95,
+         idx_vol_hi95 = hi95)
+
+proj_prc_ativ <- projecoes_brutas |>
+  filter(variavel == "idx_preco", !is.na(atividade)) |>
+  select(geo, atividade, macrossetor, ano,
+         idx_preco    = proj,
+         idx_prc_lo95 = lo95,
+         idx_prc_hi95 = hi95)
+
+# VAB nominal = val_corrente_2023 × cumprod(idx_volume × idx_preco)
+vab_ativ_proj <- proj_vol_ativ |>
+  inner_join(proj_prc_ativ, by = c("geo", "atividade", "macrossetor", "ano")) |>
+  left_join(base_2023_ativ,  by = c("geo", "atividade")) |>
+  arrange(geo, atividade, ano) |>
+  group_by(geo, atividade) |>
+  mutate(
+    fator_acum  = cumprod(idx_volume * idx_preco),
+    vab_nominal = vab_2023_ativ * fator_acum,
+    flo         = cumprod(coalesce(idx_vol_lo95, idx_volume) *
+                          coalesce(idx_prc_lo95, idx_preco)),
+    fhi         = cumprod(coalesce(idx_vol_hi95, idx_volume) *
+                          coalesce(idx_prc_hi95, idx_preco)),
+    vab_lo95    = vab_2023_ativ * flo,
+    vab_hi95    = vab_2023_ativ * fhi
+  ) |>
+  ungroup() |>
+  select(geo, atividade, macrossetor, ano, vab_nominal, vab_lo95, vab_hi95)
+
+saveRDS(vab_ativ_proj, "dados/vab_atividade_proj.rds")
+message("VAB por atividade projetado: ", nrow(vab_ativ_proj), " linhas")
+
+# ==============================================================================
 # Parte 8 — Verificações finais
 # ==============================================================================
 
 message("\n--- Verificações finais ---")
-message("projecoes_brutas:    ", nrow(projecoes_brutas),
+message("projecoes_brutas:     ", nrow(projecoes_brutas),
         " linhas (esperado: ", length(ids) * H, ")")
-message("projecoes_derivadas: ", nrow(projecoes_derivadas), " linhas")
+message("projecoes_derivadas:  ", nrow(projecoes_derivadas), " linhas")
 message("vab_macrossetor_proj: ", nrow(vab_proj), " linhas")
+message("vab_atividade_proj:   ", nrow(vab_ativ_proj), " linhas")
 
 # Identidade PIB = VAB + Impostos nas projeções
 check <- projecoes_derivadas |>
