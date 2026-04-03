@@ -66,7 +66,7 @@ Para cada série temporal (~1.089 no total), o script `03_projecao.R` seleciona 
 
 | Sigla | Modelo | Descrição |
 |-------|--------|-----------|
-| `RW` | Passeio aleatório | Linha de base |
+| `RW` | Passeio aleatório com drift | Tendência linear simples como linha de base |
 | `ARMA` | Média móvel autorregressiva | Dependência linear de curto prazo |
 | `ARIMA` | ARIMA automático | Diferenciação + seleção por AIC |
 | `SARIMA` | ARIMA sazonal (período 2) | Captura ciclos bienais |
