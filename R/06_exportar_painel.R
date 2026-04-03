@@ -147,60 +147,66 @@ imp_nom_hist <- esp |>
   filter(variavel == "impostos_nominal", atividade == "total") |>
   select(geo, geo_tipo, regiao, ano, impostos_nominal = valor)
 
-hist_cresc <- pib_vol_hist |>
-  arrange(geo, ano) |>
-  group_by(geo) |>
-  mutate(tx_cresc_pib_real = vol_enc / lag(vol_enc) - 1) |>
-  ungroup() |>
-  filter(!is.na(tx_cresc_pib_real)) |>
-  select(geo, geo_tipo, regiao, ano, tx_cresc_pib_real)
+# Referências base 2002 para índices acumulados
+ref_2002 <- pib_vol_hist |>
+  filter(ano == ANO_HIST_INI) |>
+  select(geo, vol_enc_2002 = vol_enc)
 
-hist_deflator <- pib_nom_hist |>
-  left_join(pib_vol_hist |> select(geo, ano, vol_enc),
-            by = c("geo", "ano")) |>
-  arrange(geo, ano) |>
-  group_by(geo) |>
+ref_2002_nom <- pib_nom_hist |>
+  filter(ano == ANO_HIST_INI) |>
+  select(geo, pib_nom_2002 = pib_nominal)
+
+# Histórico: índice de volume real e deflator acumulado (base 100 = 2002)
+hist_indices <- pib_vol_hist |>
+  left_join(pib_nom_hist |> select(geo, ano, pib_nominal), by = c("geo", "ano")) |>
+  left_join(ref_2002,     by = "geo") |>
+  left_join(ref_2002_nom, by = "geo") |>
+  filter(ano >= ANO_HIST_INI) |>
   mutate(
-    g_nom = pib_nominal / lag(pib_nominal) - 1,
-    g_vol = vol_enc     / lag(vol_enc)     - 1,
-    deflator_pib = (1 + g_nom) / (1 + g_vol) - 1
+    idx_vol_pib    = round(vol_enc / vol_enc_2002 * 100, 2),
+    idx_deflator   = round((pib_nominal / pib_nom_2002) / (vol_enc / vol_enc_2002) * 100, 2)
   ) |>
-  ungroup() |>
-  filter(!is.na(deflator_pib)) |>
-  select(geo, geo_tipo, regiao, ano, deflator_pib)
+  select(geo, geo_tipo, regiao, ano, idx_vol_pib, idx_deflator)
 
 pib_2023_ref <- pib_nom_hist |>
   filter(ano == ANO_HIST_FIM) |>
   select(geo, pib_lag_base = pib_nominal)
 
-# CI do deflator: propagado de pib_ci e cresc_ci
-# def_lo95 = (pib_lo95 / pib_lag) / (1 + cresc_hi95) - 1
-# def_hi95 = (pib_hi95 / pib_lag) / (1 + cresc_lo95) - 1
-deflator_ci <- proj_rec |>
-  select(geo, ano, pib_nominal, tx_cresc_pib_real) |>
-  left_join(pib_ci,   by = c("geo", "ano")) |>
+# Valores de base em 2023 para continuação dos índices acumulados
+base_idx_2023 <- hist_indices |>
+  filter(ano == ANO_HIST_FIM) |>
+  select(geo, idx_vol_2023 = idx_vol_pib, idx_defl_2023 = idx_deflator)
+
+# Índices acumulados projetados com IC (base 100 = 2002, continuados de 2023)
+proj_indices_ci <- proj_rec |>
+  select(geo, ano, pib_nominal, tx_cresc_pib_real, deflator_pib) |>
   left_join(cresc_ci, by = c("geo", "ano")) |>
+  left_join(pib_ci,   by = c("geo", "ano")) |>
+  left_join(base_idx_2023, by = "geo") |>
+  left_join(ref_2002_nom,  by = "geo") |>
   arrange(geo, ano) |>
   group_by(geo) |>
-  mutate(pib_lag_proj = lag(pib_nominal)) |>
-  ungroup() |>
-  left_join(pib_2023_ref, by = "geo") |>
   mutate(
-    pib_lag  = coalesce(pib_lag_proj, pib_lag_base),
-    g_lo_nom = pib_lo95 / pib_lag - 1,
-    g_hi_nom = pib_hi95 / pib_lag - 1,
-    g_lo_vol = coalesce(cresc_lo95, tx_cresc_pib_real),
-    g_hi_vol = coalesce(cresc_hi95, tx_cresc_pib_real),
-    def_lo95 = round(((1 + g_lo_nom) / (1 + g_hi_vol) - 1) * 100, 3),
-    def_hi95 = round(((1 + g_hi_nom) / (1 + g_lo_vol) - 1) * 100, 3)
+    # Índice de volume real acumulado (base 100 = 2002)
+    idx_vol    = idx_vol_2023 * cumprod(1 + tx_cresc_pib_real),
+    idx_vol_lo = idx_vol_2023 * cumprod(1 + coalesce(cresc_lo95, tx_cresc_pib_real)),
+    idx_vol_hi = idx_vol_2023 * cumprod(1 + coalesce(cresc_hi95, tx_cresc_pib_real)),
+    # Índice deflator acumulado (base 100 = 2002):
+    # deflator_t = PIB_nominal_t / (PIB_nom_2002 * idx_vol_t / 100)
+    idx_defl    = round((pib_nominal    / pib_nom_2002) / (idx_vol    / 100) * 100, 2),
+    idx_defl_lo = round((coalesce(pib_lo95, pib_nominal) / pib_nom_2002) / (idx_vol_hi / 100) * 100, 2),
+    idx_defl_hi = round((coalesce(pib_hi95, pib_nominal) / pib_nom_2002) / (idx_vol_lo / 100) * 100, 2)
   ) |>
-  select(geo, ano, def_lo95, def_hi95)
+  ungroup() |>
+  mutate(across(c(idx_vol, idx_vol_lo, idx_vol_hi, idx_defl), \(x) round(x, 2))) |>
+  select(geo, ano, idx_vol, idx_vol_lo, idx_vol_hi, idx_defl, idx_defl_lo, idx_defl_hi)
 
 # ==============================================================================
 # 1. serie_principal.csv
 # Formato longo: geo, geo_tipo, regiao, ano, variavel, valor, lo95, hi95, tipo
 # Variáveis: pib_nominal, vab_nominal_total, impostos_nominal,
-#            tx_cresc_pib_real (%), deflator_pib (%)
+#            idx_vol_pib (índice volume real, base 100 = 2002),
+#            idx_deflator (índice deflator acumulado, base 100 = 2002)
 # ==============================================================================
 
 message("Montando serie_principal.csv...")
@@ -228,18 +234,16 @@ hist_principal <- bind_rows(
               valor = impostos_nominal,
               lo95 = NA_real_, hi95 = NA_real_,
               tipo = "Histórico"),
-  hist_cresc |>
-    filter(ano >= ANO_HIST_INI + 1L) |>
+  hist_indices |>
     transmute(geo, geo_tipo, regiao, ano,
-              variavel = "cresc_real_pib",
-              valor = round(tx_cresc_pib_real * 100, 3),
+              variavel = "idx_vol_pib",
+              valor = idx_vol_pib,
               lo95 = NA_real_, hi95 = NA_real_,
               tipo = "Histórico"),
-  hist_deflator |>
-    filter(ano >= ANO_HIST_INI + 1L) |>
+  hist_indices |>
     transmute(geo, geo_tipo, regiao, ano,
-              variavel = "deflator_pib",
-              valor = round(deflator_pib * 100, 3),
+              variavel = "idx_deflator",
+              valor = idx_deflator,
               lo95 = NA_real_, hi95 = NA_real_,
               tipo = "Histórico")
 )
@@ -271,29 +275,18 @@ proj_principal <- bind_rows(
               lo95 = imp_lo95, hi95 = imp_hi95,
               tipo = "Projetado"),
   proj_rec |>
-    left_join(cresc_ci, by = c("geo", "ano")) |>
-
+    left_join(proj_indices_ci, by = c("geo", "ano")) |>
     transmute(geo, geo_tipo, regiao, ano,
-              variavel = "cresc_real_pib",
-              valor = round(tx_cresc_pib_real * 100, 3),
-              lo95 = round(cresc_lo95 * 100, 3),
-              hi95 = round(cresc_hi95 * 100, 3),
+              variavel = "idx_vol_pib",
+              valor = idx_vol,
+              lo95 = idx_vol_lo, hi95 = idx_vol_hi,
               tipo = "Projetado"),
   proj_rec |>
-    # deflator_pib em proj_rec é índice de nível acumulado (ex: 1.07).
-    # Converter para taxa de variação anual: deflator_t / deflator_{t-1} - 1
-    # Para 2024 (primeiro ano projetado), comparar com nível = 1 (base 2023).
-    arrange(geo, ano) |>
-    group_by(geo) |>
-    mutate(
-      deflator_anual = deflator_pib / lag(deflator_pib, default = 1) - 1
-    ) |>
-    ungroup() |>
-    left_join(deflator_ci, by = c("geo", "ano")) |>
+    left_join(proj_indices_ci, by = c("geo", "ano")) |>
     transmute(geo, geo_tipo, regiao, ano,
-              variavel = "deflator_pib",
-              valor = round(deflator_anual * 100, 3),
-              lo95 = def_lo95, hi95 = def_hi95,
+              variavel = "idx_deflator",
+              valor = idx_defl,
+              lo95 = idx_defl_lo, hi95 = idx_defl_hi,
               tipo = "Projetado")
 )
 
