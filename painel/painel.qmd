@@ -159,22 +159,22 @@ ui <- page_sidebar(
     }
 
     /* ── Modo escuro: abas em branco/cinza claro ── */
-    [data-bs-theme="dark"] .nav-tabs .nav-link,
-    [data-bs-theme="dark"] .card-header-tabs .nav-link,
-    [data-bs-theme="dark"] .bslib-card .nav-tabs .nav-link {
+    body.dark-mode .nav-tabs .nav-link,
+    body.dark-mode .card-header-tabs .nav-link,
+    body.dark-mode .bslib-card .nav-tabs .nav-link {
       color: #aaaaaa !important;
     }
-    [data-bs-theme="dark"] .nav-tabs .nav-link.active,
-    [data-bs-theme="dark"] .card-header-tabs .nav-link.active,
-    [data-bs-theme="dark"] .bslib-card .nav-tabs .nav-link.active {
+    body.dark-mode .nav-tabs .nav-link.active,
+    body.dark-mode .card-header-tabs .nav-link.active,
+    body.dark-mode .bslib-card .nav-tabs .nav-link.active {
       color: #ffffff !important;
       font-weight: 600 !important;
     }
-    [data-bs-theme="dark"] .nav-tabs .nav-link:hover,
-    [data-bs-theme="dark"] .card-header-tabs .nav-link:hover {
+    body.dark-mode .nav-tabs .nav-link:hover,
+    body.dark-mode .card-header-tabs .nav-link:hover {
       color: #dddddd !important;
     }
-    [data-bs-theme="dark"] a:not([class*="navbar"]):not(.paginate_button) {
+    body.dark-mode a:not([class*="navbar"]):not(.paginate_button) {
       color: #cccccc !important;
     }
   '))),
@@ -206,6 +206,7 @@ ui <- page_sidebar(
       btn.on("click", function() {
         isDark = !isDark;
         $(this).text(isDark ? "Modo claro" : "Modo escuro");
+        document.body.classList.toggle("dark-mode", isDark);
         Shiny.setInputValue("modo_cor", isDark ? "dark" : "light", {priority: "event"});
       });
       $(".navbar").append(btn);
