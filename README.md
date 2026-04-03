@@ -1,16 +1,17 @@
-# Projeções dos PIBs Estaduais Brasileiros (2024–2031)
+# Painel de Projeção do PIB dos Estados Brasileiros (2024–2031)
 
-Projeções do PIB nominal, VAB por macrossetor e atividade, impostos, deflatores e crescimento real para **27 UFs + 5 regiões + Brasil**, com restrições de agregação contábil (benchmarking top-down).
+Projeções do PIB nominal, VAB por macrossetor e atividade, impostos, deflator e crescimento real para **27 UFs + 5 regiões + Brasil**, com restrições de agregação contábil (benchmarking top-down).
 
-> Desenvolvido pela **SEPLAN/RR** com dados das Contas Regionais do IBGE (2002–2023).
+> Desenvolvido pela **CGEES/SEPLAN-RR** com dados das Contas Regionais do IBGE (2002–2023).  
+> **Autor:** Yuri Cesar de Lima e Silva — Analista de Planejamento e Orçamento | Chefe da Divisão de Estudos e Análises Sociais
 
 ---
 
 ## Painel Interativo
 
-Acesse o painel com os resultados em:
-
 **[https://yuricesarsilva.github.io/painel_projecao_pib_estados](https://yuricesarsilva.github.io/painel_projecao_pib_estados)**
+
+**[Nota Metodológica](https://yuricesarsilva.github.io/painel_projecao_pib_estados/metodologia.html)**
 
 O painel permite visualizar:
 - Séries históricas (2002–2023) e projeções (2024–2031) com intervalo de confiança de 95%
@@ -21,8 +22,7 @@ O painel permite visualizar:
 - Tabela interativa com todas as variáveis e fontes de dados (série principal, macrossetor, atividade)
 - Filtro de anos de projeção exibidos (padrão: 3 anos, máximo: 8 anos)
 - Números formatados no padrão brasileiro (vírgula decimal, ponto milhar)
-- Filtros por território (UF, região, Brasil) e variável
-- Modo claro/escuro
+- Alternância modo claro/escuro via botão na barra superior
 
 ---
 
@@ -33,13 +33,15 @@ O painel permite visualizar:
 ├── R/
 │   ├── 01_leitura_dados.R       # Leitura e organização dos dados brutos
 │   ├── 02_consistencia.R        # Verificação de identidades contábeis
-│   ├── 03_projecao.R            # Modelagem e projeção (~1.089 séries)
+│   ├── 03_projecao.R            # Modelagem e projeção (~1.089 séries, 10 modelos)
 │   ├── 04_reconciliacao.R       # Benchmarking top-down (BR → região → UF)
 │   ├── 05_output.R              # Geração de tabelas Excel e gráficos
 │   ├── 06_exportar_painel.R     # Exporta CSVs para o painel interativo
 │   └── run_all.R                # Executa o pipeline completo em sequência
 ├── painel/
 │   ├── painel.qmd               # Painel Quarto Dashboard + shinylive
+│   ├── metodologia.html         # Nota metodológica (publicada no GitHub Pages)
+│   ├── custom.css               # Estilos customizados (navbar, sidebar, tabelas)
 │   ├── data/                    # CSVs exportados (versionados no git)
 │   └── _extensions/             # Extensão quarto-ext/shinylive
 ├── base_bruta/                  # Dados brutos do IBGE (não versionados)
@@ -54,45 +56,53 @@ O painel permite visualizar:
 ### Dados
 
 - **Fonte:** IBGE — Contas Regionais do Brasil
-- **Período histórico:** 2002–2023
-- **Cobertura:** 27 UFs, 5 regiões geográficas e Brasil
-- **Variáveis:** PIB nominal, VAB por macrossetor e atividade, impostos sobre produtos, volume encadeado
+- **Período histórico:** 2002–2023 (22 observações anuais)
+- **Cobertura:** 27 UFs, 5 regiões geográficas e Brasil (33 territórios)
+- **Variáveis modeladas:** índices de volume e preço por atividade/macrossetor, log dos impostos
 
 ### Modelos de Projeção
 
-Para cada série temporal (~1.089 no total), o script `03_projecao.R` seleciona automaticamente o melhor entre 9 modelos via validação cruzada com janela expansiva (*expanding window CV*):
+Para cada série temporal (~1.089 no total), o script `03_projecao.R` seleciona automaticamente o melhor entre **10 modelos** via validação cruzada com janela expansiva (*expanding window CV*, mínimo de 15 observações de treino):
 
-| Modelo | Descrição |
-|--------|-----------|
-| `naive` | Último valor observado (benchmark) |
-| `rw_drift` | Random walk com drift |
-| `ets` | Suavização exponencial (ETS) |
-| `arima` | ARIMA automático |
-| `tslm_trend` | Regressão linear com tendência |
-| `tslm_log` | Regressão log-linear com tendência |
-| `tslm_trend_season` | Tendência + sazonalidade |
-| `var_br` | VAR bivariado com série nacional |
-| `lm_br` | Regressão na série nacional |
+| Sigla | Modelo | Descrição |
+|-------|--------|-----------|
+| `RW` | Passeio aleatório | Linha de base |
+| `ARMA` | Média móvel autorregressiva | Dependência linear de curto prazo |
+| `ARIMA` | ARIMA automático | Diferenciação + seleção por AIC |
+| `SARIMA` | ARIMA sazonal (período 2) | Captura ciclos bienais |
+| `ETS` | Suavização exponencial | Nível, tendência e sazonalidade adaptativa |
+| `ETS-A` | ETS com tendência amortecida | Crescimento desacelerando no horizonte |
+| `THETA` | Método Theta | Combinação de regressão linear e suavização |
+| `NNAR` | Rede neural autorregressiva | Captura não-linearidades |
+| `PROPHET` | Prophet (Meta) | Tendência, sazonalidade e calendário |
+| `SSM` | Modelo de espaço de estados | Filtro de Kalman (local linear trend) |
 
-A seleção usa o menor **MASE** (Mean Absolute Scaled Error) na validação.
+A seleção usa o menor **MASE** (*Mean Absolute Scaled Error*) no período de validação (2017–2023).
 
 ### Séries Projetadas
 
-As projeções cobrem três grupos:
-
-1. **Macrossetor × geo** — índices de volume e preço para 4 macrosetores × 33 territórios (≈264 séries)
-2. **Impostos** — log dos impostos nominais para 33 territórios
-3. **Atividade × geo** — índices de volume e preço para 12 atividades × 33 territórios (≈792 séries)
+| Grupo | Variáveis | Nº de séries |
+|-------|-----------|-------------|
+| A — Macrossetor × geo | idx_volume e idx_preco (4 macrosetores × 33 geos) | ~264 |
+| B — Impostos × geo | log(impostos_nominal) | 33 |
+| C — Atividade × geo | idx_volume e idx_preco (12 atividades × 33 geos) | ~792 |
 
 ### Reconciliação (Benchmarking Top-Down)
 
-O script `04_reconciliacao.R` impõe consistência hierárquica:
+O script `04_reconciliacao.R` garante consistência hierárquica por fator multiplicativo proporcional:
 
-- **Nível 1:** Brasil (restrição externa — projeções ajustadas por fator multiplicativo)
-- **Nível 2:** Regiões devem somar ao Brasil
-- **Nível 3:** UFs devem somar à respectiva região
+1. **Brasil** como âncora (valor projetado inalterado)
+2. **Regiões** ajustadas para somar ao Brasil
+3. **UFs** ajustadas para somar à respectiva região
+4. **Identidade contábil** PIB = VAB + Impostos preservada em todos os níveis
+5. **Macrossetores e atividades** escalonados para bater com o VAB total reconciliado
 
-O mesmo procedimento é aplicado ao VAB por macrossetor e por atividade.
+### Índices Acumulados
+
+As séries de volume e deflator são apresentadas como índices com **base 100 = 2002**:
+
+- `idx_vol_pib` = (vol_enc_t / vol_enc_2002) × 100
+- `idx_deflator` = (PIB_nominal_t / PIB_nominal_2002) / (idx_vol_t / 100) × 100
 
 ---
 
@@ -101,17 +111,16 @@ O mesmo procedimento é aplicado ao VAB por macrossetor e por atividade.
 ### Pré-requisitos
 
 - R ≥ 4.2
-- Pacotes: `tidyverse`, `forecast`, `fpp3`, `readxl`, `openxlsx`, `tseries`
+- Pacotes: `tidyverse`, `forecast`, `prophet`, `readxl`, `openxlsx`
 - Dados brutos do IBGE em `base_bruta/` (não incluídos no repositório)
 
-### Executar o pipeline completo
+### Pipeline completo
 
 ```r
-# No console R, a partir da raiz do projeto:
 source("R/run_all.R")
 ```
 
-### Executar etapas individualmente
+### Etapas individuais
 
 ```r
 source("R/01_leitura_dados.R")   # ~2 min
@@ -122,11 +131,11 @@ source("R/05_output.R")          # ~5 min
 source("R/06_exportar_painel.R") # ~1 min
 ```
 
-> **Nota sobre cache:** O script `03_projecao.R` salva os modelos selecionados em `dados/selecao_modelos.rds`. Nas execuções seguintes, o CV é pulado e os modelos são reutilizados. Ao adicionar novas séries, delete esse arquivo para forçar o reprocessamento.
+> **Cache:** `03_projecao.R` salva os modelos em `dados/selecao_modelos.rds`. Delete esse arquivo ao adicionar novas séries para forçar o reprocessamento.
 
-### Atualizar o painel após nova execução
+### Atualizar o painel
 
-Após rodar o pipeline, os CSVs em `painel/data/` são atualizados. Basta fazer commit e push — o GitHub Actions republica automaticamente:
+Após rodar o pipeline, os CSVs em `painel/data/` são atualizados. Faça commit e push — o GitHub Actions republica automaticamente:
 
 ```bash
 git add painel/data/
@@ -141,12 +150,11 @@ git push origin main
 | Arquivo/Pasta | Conteúdo |
 |---------------|----------|
 | `output/tabelas/projecoes_pib_estadual.xlsx` | Tabelas com projeções (9 abas) |
-| `output/graficos/todas_geos/` | 21 plots facetados por variável |
-| `output/graficos/por_geo/` | 33 plots individuais por território |
-| `output/graficos/por_geo_atividade/` | 33 gráficos de área empilhada por atividade |
-| `painel/data/serie_principal.csv` | Séries históricas + projetadas, 5 variáveis (incl. índices acumulados base 100=2002), IC 95% |
+| `output/graficos/` | Gráficos PNG por variável e por território |
+| `painel/data/serie_principal.csv` | Séries históricas + projetadas, 5 variáveis, IC 95% |
 | `painel/data/vab_macrossetor.csv` | VAB histórico + projetado por macrossetor, IC 95% |
 | `painel/data/vab_atividade.csv` | VAB histórico + projetado por atividade, IC 95% |
+| `painel/metodologia.html` | Nota metodológica publicada no GitHub Pages |
 
 ---
 
@@ -154,10 +162,10 @@ git push origin main
 
 O painel é publicado automaticamente no GitHub Pages via GitHub Actions a cada push que altere arquivos em `painel/`. O workflow está em [`.github/workflows/publish-painel.yml`](.github/workflows/publish-painel.yml).
 
-Tecnologias utilizadas:
+Tecnologias:
 - [Quarto Dashboard](https://quarto.org/docs/dashboards/) — estrutura do painel
-- [shinylive](https://shiny.posit.co/py/docs/shinylive.html) — R/Shiny rodando no browser via WebAssembly (sem servidor)
-- [GitHub Pages](https://pages.github.com/) — hospedagem estática gratuita
+- [shinylive](https://shiny.posit.co/py/docs/shinylive.html) — R/Shiny via WebAssembly (sem servidor)
+- [GitHub Pages](https://pages.github.com/) — hospedagem estática
 
 ---
 
