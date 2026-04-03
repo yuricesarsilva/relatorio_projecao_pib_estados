@@ -36,15 +36,23 @@ library(DT)
 library(scales)
 
 # ==============================================================================
-# Dados (lidos via HTTP — painel/data/ é servido como estático no GitHub Pages)
+# Dados (embutidos via additional-files no build shinylive)
 # ==============================================================================
 
-serie    <- tryCatch(read.csv("data/serie_principal.csv",  na.strings = ""),
-                     error = function(e) NULL)
-vab_mac  <- tryCatch(read.csv("data/vab_macrossetor.csv",  na.strings = ""),
-                     error = function(e) NULL)
-vab_ativ <- tryCatch(read.csv("data/vab_atividade.csv",    na.strings = ""),
-                     error = function(e) NULL)
+serie_err <- vab_mac_err <- vab_ativ_err <- NULL
+
+serie <- tryCatch(
+  read.csv("data/serie_principal.csv", na.strings = ""),
+  error = function(e) { serie_err <<- conditionMessage(e); NULL }
+)
+vab_mac <- tryCatch(
+  read.csv("data/vab_macrossetor.csv", na.strings = ""),
+  error = function(e) { vab_mac_err <<- conditionMessage(e); NULL }
+)
+vab_ativ <- tryCatch(
+  read.csv("data/vab_atividade.csv", na.strings = ""),
+  error = function(e) { vab_ativ_err <<- conditionMessage(e); NULL }
+)
 
 # ==============================================================================
 # Constantes
@@ -189,7 +197,9 @@ ui <- page_sidebar(
     ),
     hr(),
     tags$small(tags$em("Fonte: IBGE Contas Regionais (2002–2023). ",
-                       "Projeções próprias com reconciliação top-down (2024–2031)."))
+                       "Projeções próprias com reconciliação top-down (2024–2031).")),
+    hr(),
+    verbatimTextOutput("debug_dados")
   ),
 
   navset_card_tab(
@@ -271,9 +281,17 @@ server <- function(input, output, session) {
     paste0(VARIAVEL_LABEL[input$variavel], " — ", input$geo)
   })
 
+  output$debug_dados <- renderText({
+    paste0(
+      "serie: ",    if (is.null(serie))    paste("ERRO:", serie_err)    else paste(nrow(serie),    "linhas"), "\n",
+      "vab_mac: ",  if (is.null(vab_mac))  paste("ERRO:", vab_mac_err)  else paste(nrow(vab_mac),  "linhas"), "\n",
+      "vab_ativ: ", if (is.null(vab_ativ)) paste("ERRO:", vab_ativ_err) else paste(nrow(vab_ativ), "linhas")
+    )
+  })
+
   output$plot_serie <- renderPlot({
     df <- dados_serie()
-    req(nrow(df) > 0)
+    validate(need(nrow(df) > 0, paste("Sem dados para", input$geo, "/", input$variavel)))
 
     unidade <- if (eh_pct(input$variavel)) "% a.a." else "R$ bilhões"
     subtitulo <- paste0("Histórico 2002–", ANO_HIST_FIM,
@@ -306,7 +324,7 @@ server <- function(input, output, session) {
 
   # ---- Aba 2: VAB Macrossetor -----------------------------------------------
   output$plot_macro <- renderPlot({
-    req(vab_mac)
+    validate(need(!is.null(vab_mac), paste("Erro ao carregar vab_macrossetor:", vab_mac_err)))
     df <- vab_mac |>
       filter(geo == input$geo) |>
       mutate(
@@ -373,7 +391,7 @@ server <- function(input, output, session) {
 
   # ---- Aba 3: VAB Atividade -------------------------------------------------
   output$plot_ativ <- renderPlot({
-    req(vab_ativ)
+    validate(need(!is.null(vab_ativ), paste("Erro ao carregar vab_atividade:", vab_ativ_err)))
     df <- vab_ativ |>
       filter(geo == input$geo) |>
       mutate(
@@ -446,7 +464,8 @@ server <- function(input, output, session) {
   })
 
   output$plot_comp <- renderPlot({
-    req(serie, length(input$geos_comp) >= 1)
+    validate(need(!is.null(serie), paste("Erro ao carregar serie:", serie_err)))
+    validate(need(length(input$geos_comp) >= 1, "Selecione ao menos um território."))
     df <- serie |>
       filter(geo %in% input$geos_comp, variavel == input$variavel) |>
       mutate(tipo = factor(tipo, levels = c("Histórico", "Projetado")))
@@ -488,37 +507,24 @@ server <- function(input, output, session) {
 
   # ---- Aba 5: Tabela --------------------------------------------------------
   output$tabela_dados <- renderDT({
-    req(serie)
+    validate(need(!is.null(serie), paste("Erro ao carregar serie:", serie_err)))
     df <- serie |>
       filter(geo == input$geo, variavel == input$variavel) |>
       transmute(
-        Território = geo,
+        Territorio = geo,
         Tipo       = tipo,
         Ano        = ano,
-        Variável   = coalesce(VARIAVEL_LABEL[variavel], variavel),
+        Variavel   = coalesce(VARIAVEL_LABEL[variavel], variavel),
         Valor      = round(valor, 3),
-        `LI 95%`   = round(lo95,  3),
-        `LS 95%`   = round(hi95,  3)
+        LI_95      = round(lo95,  3),
+        LS_95      = round(hi95,  3)
       )
 
     datatable(
       df,
-      extensions = "Buttons",
-      options = list(
-        dom        = "Bfrtip",
-        buttons    = list("csv", "excel"),
-        pageLength = 15,
-        language   = list(
-          search     = "Buscar:",
-          lengthMenu = "Mostrar _MENU_ linhas",
-          info       = "Linhas _START_ a _END_ de _TOTAL_",
-          paginate   = list(previous = "Anterior", `next` = "Próximo")
-        )
-      ),
+      options = list(pageLength = 15),
       rownames = FALSE
-    ) |>
-      formatRound(columns = c("Valor", "LI 95%", "LS 95%"),
-                  digits = 3, mark = ".", dec.mark = ",")
+    )
   })
 }
 
