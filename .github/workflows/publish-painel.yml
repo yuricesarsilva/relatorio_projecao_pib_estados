@@ -50,7 +50,13 @@ jobs:
 
       # Copiar arquivos extras que o Quarto não copia automaticamente no modo shinylive
       - name: Copiar metodologia.html para _site
-        run: cp painel/metodologia.html painel/_site/metodologia.html
+        working-directory: painel
+        run: |
+          echo "Conteúdo de _site:"
+          ls _site/
+          cp metodologia.html _site/metodologia.html
+          echo "Após cópia:"
+          ls _site/metodologia.html
 
       # Publicar na branch gh-pages
       - name: Publicar no GitHub Pages
