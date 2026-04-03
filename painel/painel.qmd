@@ -162,7 +162,10 @@ ui <- page_sidebar(
                   selected = "Brasil"),
       selectInput("variavel", "Variável",
                   choices  = setNames(names(VARIAVEL_LABEL), VARIAVEL_LABEL),
-                  selected = "pib_nominal")
+                  selected = "pib_nominal"),
+      sliderInput("n_proj", "Anos de projeção exibidos",
+                  min = 1, max = ANO_PROJ_FIM - ANO_HIST_FIM,
+                  value = 3, step = 1, ticks = FALSE)
     ),
     hr(),
     conditionalPanel(
@@ -298,11 +301,14 @@ server <- function(input, output, session) {
     )
   })
 
+  ano_max <- reactive({ ANO_HIST_FIM + input$n_proj })
+
   # Dados filtrados
   dados_serie <- reactive({
     req(serie())
     serie() |>
-      filter(geo == input$geo, variavel == input$variavel) |>
+      filter(geo == input$geo, variavel == input$variavel,
+             ano <= ano_max()) |>
       mutate(tipo = factor(tipo, levels = c("Histórico", "Projetado")))
   })
 
@@ -317,7 +323,7 @@ server <- function(input, output, session) {
 
     unidade  <- if (eh_pct(input$variavel)) "% a.a." else "R$ bilhões"
     subtitulo <- paste0("Histórico 2002–", ANO_HIST_FIM,
-                        " + Projeção ", ANO_HIST_FIM + 1L, "–", ANO_PROJ_FIM,
+                        " + Projeção ", ANO_HIST_FIM + 1L, "–", ano_max(),
                         " com IC 95%")
 
     ggplot(df, aes(x = ano)) +
@@ -347,7 +353,7 @@ server <- function(input, output, session) {
   # ---- Aba 2: VAB Macrossetor -----------------------------------------------
   output$plot_macro <- renderPlot({
     df <- vab_mac() |>
-      filter(geo == input$geo) |>
+      filter(geo == input$geo, ano <= ano_max()) |>
       mutate(
         tipo      = factor(tipo, levels = c("Histórico", "Projetado")),
         mac_label = coalesce(MACRO_LABEL[macrossetor], macrossetor)
@@ -398,7 +404,7 @@ server <- function(input, output, session) {
   # ---- Aba 3: VAB Atividade -------------------------------------------------
   output$plot_ativ <- renderPlot({
     df <- vab_ativ() |>
-      filter(geo == input$geo) |>
+      filter(geo == input$geo, ano <= ano_max()) |>
       mutate(
         tipo       = factor(tipo, levels = c("Histórico", "Projetado")),
         ativ_label = coalesce(ATIVIDADE_LABEL[atividade], atividade)
@@ -455,7 +461,8 @@ server <- function(input, output, session) {
   output$plot_comp <- renderPlot({
     validate(need(length(input$geos_comp) >= 1, "Selecione ao menos um território."))
     df <- serie() |>
-      filter(geo %in% input$geos_comp, variavel == input$variavel) |>
+      filter(geo %in% input$geos_comp, variavel == input$variavel,
+             ano <= ano_max()) |>
       mutate(tipo = factor(tipo, levels = c("Histórico", "Projetado")))
 
     validate(need(nrow(df) > 0, "Sem dados para a combinação selecionada."))
