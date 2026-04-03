@@ -135,6 +135,30 @@ ui <- page_sidebar(
   theme = bs_theme(preset = "flatly", version = 5),
 
   # JavaScript: busca CSVs + injeta botão sol/lua na navbar
+  tags$head(tags$style(HTML('
+    /* Abas não selecionadas: cinza escuro */
+    .nav-tabs .nav-link,
+    .card-header-tabs .nav-link,
+    .bslib-card .nav-tabs .nav-link {
+      color: #555555 !important;
+    }
+    /* Aba selecionada: preto */
+    .nav-tabs .nav-link.active,
+    .card-header-tabs .nav-link.active,
+    .bslib-card .nav-tabs .nav-link.active {
+      color: #111111 !important;
+      font-weight: 600 !important;
+    }
+    /* Hover */
+    .nav-tabs .nav-link:hover,
+    .card-header-tabs .nav-link:hover {
+      color: #222222 !important;
+    }
+    /* Links gerais fora da navbar */
+    a:not([class*="navbar"]):not(.paginate_button) {
+      color: #333333 !important;
+    }
+  '))),
   tags$head(tags$script(HTML(paste0('
     $(document).on("shiny:connected", function() {
 
