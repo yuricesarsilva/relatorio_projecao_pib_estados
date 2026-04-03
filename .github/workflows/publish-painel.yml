@@ -48,6 +48,10 @@ jobs:
       - name: Renderizar painel Quarto
         run: cd painel && quarto render painel.qmd --output-dir _site
 
+      # Copiar arquivos extras que o Quarto não copia automaticamente no modo shinylive
+      - name: Copiar metodologia.html para _site
+        run: cp painel/metodologia.html painel/_site/metodologia.html
+
       # Publicar na branch gh-pages
       - name: Publicar no GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
