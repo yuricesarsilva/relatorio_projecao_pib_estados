@@ -259,9 +259,18 @@ proj_principal <- bind_rows(
               hi95 = round(cresc_hi95 * 100, 3),
               tipo = "Projetado"),
   proj_rec |>
+    # deflator_pib em proj_rec é índice de nível acumulado (ex: 1.07).
+    # Converter para taxa de variação anual: deflator_t / deflator_{t-1} - 1
+    # Para 2024 (primeiro ano projetado), comparar com nível = 1 (base 2023).
+    arrange(geo, ano) |>
+    group_by(geo) |>
+    mutate(
+      deflator_anual = deflator_pib / lag(deflator_pib, default = 1) - 1
+    ) |>
+    ungroup() |>
     transmute(geo, geo_tipo, regiao, ano,
               variavel = "deflator_pib",
-              valor = round(deflator_pib * 100, 3),
+              valor = round(deflator_anual * 100, 3),
               lo95 = NA_real_, hi95 = NA_real_,
               tipo = "Projetado")
 )
