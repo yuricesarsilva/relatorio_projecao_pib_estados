@@ -155,12 +155,15 @@ ui <- page_sidebar(
     width = 260,
     input_dark_mode(id = "modo_cor", mode = "light"),
     hr(),
-    selectInput("geo", "Território",
-                choices  = GEO_ORDER,
-                selected = "Brasil"),
-    selectInput("variavel", "Variável",
-                choices  = setNames(names(VARIAVEL_LABEL), VARIAVEL_LABEL),
-                selected = "pib_nominal"),
+    conditionalPanel(
+      "input.abas !== 'Tabela'",
+      selectInput("geo", "Território",
+                  choices  = GEO_ORDER,
+                  selected = "Brasil"),
+      selectInput("variavel", "Variável",
+                  choices  = setNames(names(VARIAVEL_LABEL), VARIAVEL_LABEL),
+                  selected = "pib_nominal")
+    ),
     hr(),
     conditionalPanel(
       "input.abas === 'Macrossetor' || input.abas === 'Comparativo'",
