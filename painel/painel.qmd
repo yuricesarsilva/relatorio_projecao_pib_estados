@@ -1,11 +1,10 @@
 ---
-title: "Projeções PIB Estadual 2024–2031"
+title: "Painel de Projeção do PIB dos Estados"
 format:
   dashboard:
     output-file: index.html
-    theme:
-      light: flatly
-      dark: darkly
+    theme: flatly
+    css: custom.css
     logo: ""
     nav-buttons:
       - icon: github
