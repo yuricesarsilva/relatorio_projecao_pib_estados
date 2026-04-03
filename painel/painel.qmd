@@ -22,6 +22,10 @@ execute:
 ```{shinylive-r}
 #| standalone: true
 #| viewerHeight: 850
+#| additional-files:
+#|   - data/serie_principal.csv
+#|   - data/vab_macrossetor.csv
+#|   - data/vab_atividade.csv
 
 library(shiny)
 library(bslib)
