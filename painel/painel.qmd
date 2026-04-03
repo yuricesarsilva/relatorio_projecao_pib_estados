@@ -129,12 +129,14 @@ BASE_URL <- "https://yuricesarsilva.github.io/painel_projecao_pib_estados/data"
 # ==============================================================================
 
 ui <- page_sidebar(
-  title = "Projeções PIB Estadual — Brasil 2024–2031",
+  title = "Painel de Projeções dos PIBs Estaduais",
   theme = bs_theme(preset = "flatly", version = 5),
 
-  # JavaScript: busca CSVs via fetch() e envia ao Shiny
+  # JavaScript: busca CSVs + injeta botão sol/lua na navbar
   tags$head(tags$script(HTML(paste0('
     $(document).on("shiny:connected", function() {
+
+      // Busca dados
       var base = "', BASE_URL, '";
       Promise.all([
         fetch(base + "/serie_principal.csv").then(function(r) { return r.text(); }),
@@ -147,12 +149,26 @@ ui <- page_sidebar(
       }).catch(function(e) {
         Shiny.setInputValue("data_load_error", e.toString(), {priority: "event"});
       });
+
+      // Botão sol/lua na navbar
+      var isDark = false;
+      var btn = $(
+        \'<button id="theme-toggle" title="Alternar tema claro/escuro" \' +
+        \'style="background:none;border:none;cursor:pointer;color:#fff;\' +
+        \'font-size:1.25em;line-height:1;padding:0 4px 0 12px;opacity:0.9;">\' +
+        \'&#9728;</button>\'
+      );
+      btn.on("click", function() {
+        isDark = !isDark;
+        $(this).html(isDark ? "&#9790;" : "&#9728;");
+        Shiny.setInputValue("modo_cor", isDark ? "dark" : "light", {priority: "event"});
+      });
+      $(".navbar").append(btn);
     });
   ')))),
 
   sidebar = sidebar(
     width = 260,
-    input_dark_mode(id = "modo_cor", mode = "light"),
     hr(),
     conditionalPanel(
       "input.abas !== 'Tabela'",
