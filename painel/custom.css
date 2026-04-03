@@ -1,3 +1,4 @@
+/* ── Navbar preta ───────────────────────────────────────────── */
 .navbar,
 .navbar-default {
   background-color: #000000 !important;
@@ -11,8 +12,76 @@
 .navbar-nav .nav-link:hover,
 .navbar-nav .nav-link:focus,
 .navbar .nav-item a,
-.navbar .navbar-toggler-icon,
 .navbar svg {
   color: #ffffff !important;
   fill: #ffffff !important;
+}
+
+/* ── Sidebar: fundo claro, sem bordas coloridas ─────────────── */
+.bslib-sidebar-layout > .sidebar {
+  background-color: #f8f8f8 !important;
+  border-right: 1px solid #e8e8e8 !important;
+}
+
+/* ── Labels e textos do sidebar em cinza escuro ─────────────── */
+.sidebar label,
+.sidebar .control-label,
+.sidebar .shiny-input-container label,
+.sidebar .form-label,
+.sidebar p,
+.sidebar small {
+  color: #333333 !important;
+  font-weight: 500 !important;
+}
+
+/* ── Inputs: borda sutil, sem cor de destaque azul ─────────── */
+.sidebar .form-control,
+.sidebar .form-select {
+  border-color: #d0d0d0 !important;
+  color: #222222 !important;
+  box-shadow: none !important;
+}
+
+.sidebar .form-control:focus,
+.sidebar .form-select:focus {
+  border-color: #888888 !important;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.08) !important;
+}
+
+/* ── Radio buttons: remover cor de destaque ─────────────────── */
+.sidebar .form-check-input:checked {
+  background-color: #444444 !important;
+  border-color: #444444 !important;
+}
+
+/* ── Slider: trilho e bolinha em cinza ──────────────────────── */
+.irs--shiny .irs-bar,
+.irs--shiny .irs-handle {
+  background: #444444 !important;
+  border-color: #444444 !important;
+}
+
+.irs--shiny .irs-from,
+.irs--shiny .irs-to,
+.irs--shiny .irs-single {
+  background: #444444 !important;
+}
+
+/* ── Abas do painel (nav tabs): sem cor de destaque ────────── */
+.nav-tabs .nav-link.active {
+  color: #111111 !important;
+  border-bottom: 2px solid #111111 !important;
+  font-weight: 600 !important;
+}
+
+.nav-tabs .nav-link {
+  color: #666666 !important;
+}
+
+/* ── Card headers: texto escuro ─────────────────────────────── */
+.card-header {
+  color: #222222 !important;
+  font-weight: 600 !important;
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #eeeeee !important;
 }

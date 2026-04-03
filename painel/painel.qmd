@@ -169,7 +169,6 @@ ui <- page_sidebar(
 
   sidebar = sidebar(
     width = 260,
-    hr(),
     conditionalPanel(
       "input.abas !== 'Tabela'",
       selectInput("geo", "Território",
@@ -182,7 +181,6 @@ ui <- page_sidebar(
                   min = 1, max = ANO_PROJ_FIM - ANO_HIST_FIM,
                   value = 3, step = 1, ticks = FALSE)
     ),
-    hr(),
     conditionalPanel(
       "input.abas === 'Macrossetor' || input.abas === 'Comparativo'",
       selectInput("macrossetor", "Macrossetor",
@@ -235,11 +233,12 @@ ui <- page_sidebar(
           selected = "todas")
       )
     ),
-    hr(),
-    verbatimTextOutput("debug_dados"),
-    hr(),
-    tags$small(tags$em("Fonte: IBGE Contas Regionais (2002–2023). ",
-                       "Projeções próprias com reconciliação top-down (2024–2031)."))
+    tags$div(
+      style = "margin-top: auto; padding-top: 16px; border-top: 1px solid #e0e0e0;",
+      tags$small(style = "color: #888;",
+        "Fonte: IBGE Contas Regionais (2002–2023). ",
+        "Projeções próprias com reconciliação top-down (2024–2031).")
+    )
   ),
 
   navset_card_tab(
@@ -301,19 +300,6 @@ server <- function(input, output, session) {
   vab_ativ <- reactive({
     req(input$vab_ativ_raw)
     read.csv(textConnection(input$vab_ativ_raw), na.strings = "")
-  })
-
-  output$debug_dados <- renderText({
-    s_ok  <- !is.null(input$serie_raw)
-    m_ok  <- !is.null(input$vab_mac_raw)
-    a_ok  <- !is.null(input$vab_ativ_raw)
-    err   <- input$data_load_error
-    paste0(
-      if (!is.null(err)) paste0("JS ERRO: ", err, "\n") else "",
-      "serie: ",    if (s_ok) paste(nrow(serie()),    "linhas") else "carregando...", "\n",
-      "vab_mac: ",  if (m_ok) paste(nrow(vab_mac()),  "linhas") else "carregando...", "\n",
-      "vab_ativ: ", if (a_ok) paste(nrow(vab_ativ()), "linhas") else "carregando..."
-    )
   })
 
   ano_max <- reactive({ ANO_HIST_FIM + input$n_proj })
