@@ -32,29 +32,6 @@ library(DT)
 library(scales)
 
 # ==============================================================================
-# Dados (embutidos via additional-files no build shinylive)
-# ==============================================================================
-
-serie_err <- vab_mac_err <- vab_ativ_err <- NULL
-
-BASE_URL <- "https://yuricesarsilva.github.io/relatorio_projecao_pib_estados/data"
-
-fetch_csv <- function(nome, destino) {
-  tryCatch({
-    webr::download(paste0(BASE_URL, "/", nome), destino)
-    read.csv(destino, na.strings = "")
-  }, error = function(e) e)
-}
-
-res_serie    <- fetch_csv("serie_principal.csv",  "serie.csv")
-res_vab_mac  <- fetch_csv("vab_macrossetor.csv",  "vab_mac.csv")
-res_vab_ativ <- fetch_csv("vab_atividade.csv",    "vab_ativ.csv")
-
-serie    <- if (inherits(res_serie,    "error")) { serie_err    <<- conditionMessage(res_serie);    NULL } else res_serie
-vab_mac  <- if (inherits(res_vab_mac,  "error")) { vab_mac_err  <<- conditionMessage(res_vab_mac);  NULL } else res_vab_mac
-vab_ativ <- if (inherits(res_vab_ativ, "error")) { vab_ativ_err <<- conditionMessage(res_vab_ativ); NULL } else res_vab_ativ
-
-# ==============================================================================
 # Constantes
 # ==============================================================================
 
@@ -72,14 +49,12 @@ GEO_ORDER <- c(
   "Centro-Oeste", "Mato Grosso do Sul", "Mato Grosso", "Goiás", "Distrito Federal"
 )
 
-GEO_TIPO_LABEL <- c(brasil = "Brasil", regiao = "Região", estado = "Estado")
-
 VARIAVEL_LABEL <- c(
-  pib_nominal      = "PIB Nominal (R$ milhões)",
-  vab_nominal_total= "VAB Nominal Total (R$ milhões)",
-  impostos_nominal = "Impostos Líquidos de Subsídios (R$ milhões)",
-  cresc_real_pib   = "Crescimento Real do PIB (% a.a.)",
-  deflator_pib     = "Deflator Implícito do PIB (% a.a.)"
+  pib_nominal       = "PIB Nominal (R$ milhões)",
+  vab_nominal_total = "VAB Nominal Total (R$ milhões)",
+  impostos_nominal  = "Impostos Líquidos de Subsídios (R$ milhões)",
+  cresc_real_pib    = "Crescimento Real do PIB (% a.a.)",
+  deflator_pib      = "Deflator Implícito do PIB (% a.a.)"
 )
 
 MACRO_LABEL <- c(
@@ -148,6 +123,8 @@ formato_y <- function(var) {
                                              suffix = " bi"))
 }
 
+BASE_URL <- "https://yuricesarsilva.github.io/relatorio_projecao_pib_estados/data"
+
 # ==============================================================================
 # UI
 # ==============================================================================
@@ -156,21 +133,35 @@ ui <- page_sidebar(
   title = "Projeções PIB Estadual — Brasil 2024–2031",
   theme = bs_theme(preset = "flatly", version = 5),
 
+  # JavaScript: busca CSVs via fetch() e envia ao Shiny
+  tags$head(tags$script(HTML(paste0('
+    $(document).on("shiny:connected", function() {
+      var base = "', BASE_URL, '";
+      Promise.all([
+        fetch(base + "/serie_principal.csv").then(function(r) { return r.text(); }),
+        fetch(base + "/vab_macrossetor.csv").then(function(r) { return r.text(); }),
+        fetch(base + "/vab_atividade.csv").then(function(r) { return r.text(); })
+      ]).then(function(results) {
+        Shiny.setInputValue("serie_raw",    results[0], {priority: "event"});
+        Shiny.setInputValue("vab_mac_raw",  results[1], {priority: "event"});
+        Shiny.setInputValue("vab_ativ_raw", results[2], {priority: "event"});
+      }).catch(function(e) {
+        Shiny.setInputValue("data_load_error", e.toString(), {priority: "event"});
+      });
+    });
+  ')))),
+
   sidebar = sidebar(
     width = 260,
-    # Toggle dia/noite
     input_dark_mode(id = "modo_cor", mode = "light"),
     hr(),
-    # Território
     selectInput("geo", "Território",
                 choices  = GEO_ORDER,
                 selected = "Brasil"),
-    # Variável principal
     selectInput("variavel", "Variável",
                 choices  = setNames(names(VARIAVEL_LABEL), VARIAVEL_LABEL),
                 selected = "pib_nominal"),
     hr(),
-    # Filtro extra: macrossetor (visível nas abas 2 e 4)
     conditionalPanel(
       "input.abas === 'Macrossetor' || input.abas === 'Comparativo'",
       selectInput("macrossetor", "Macrossetor",
@@ -178,7 +169,6 @@ ui <- page_sidebar(
                                setNames(names(MACRO_LABEL), MACRO_LABEL)),
                   selected = "todos")
     ),
-    # Filtro extra: atividade (visível na aba 3)
     conditionalPanel(
       "input.abas === 'Atividade'",
       selectInput("atividade", "Atividade",
@@ -186,7 +176,6 @@ ui <- page_sidebar(
                                setNames(names(ATIVIDADE_LABEL), ATIVIDADE_LABEL)),
                   selected = "todas")
     ),
-    # Multi-select territórios (visível na aba 4)
     conditionalPanel(
       "input.abas === 'Comparativo'",
       selectInput("geos_comp", "Territórios a comparar",
@@ -196,58 +185,39 @@ ui <- page_sidebar(
                   multiple = TRUE)
     ),
     hr(),
-    tags$small(tags$em("Fonte: IBGE Contas Regionais (2002–2023). ",
-                       "Projeções próprias com reconciliação top-down (2024–2031).")),
+    verbatimTextOutput("debug_dados"),
     hr(),
-    verbatimTextOutput("debug_dados")
+    tags$small(tags$em("Fonte: IBGE Contas Regionais (2002–2023). ",
+                       "Projeções próprias com reconciliação top-down (2024–2031)."))
   ),
 
   navset_card_tab(
     id = "abas",
 
-    # ---- Aba 1: Série Histórica + Projeção ----------------------------------
     nav_panel("Série Histórica",
-      card(
-        full_screen = TRUE,
+      card(full_screen = TRUE,
         card_header(textOutput("titulo_serie")),
-        plotOutput("plot_serie", height = "500px")
-      )
+        plotOutput("plot_serie", height = "500px"))
     ),
-
-    # ---- Aba 2: VAB por Macrossetor -----------------------------------------
     nav_panel("Macrossetor",
-      card(
-        full_screen = TRUE,
+      card(full_screen = TRUE,
         card_header("VAB por Macrossetor"),
-        plotOutput("plot_macro", height = "500px")
-      )
+        plotOutput("plot_macro", height = "500px"))
     ),
-
-    # ---- Aba 3: VAB por Atividade -------------------------------------------
     nav_panel("Atividade",
-      card(
-        full_screen = TRUE,
+      card(full_screen = TRUE,
         card_header("VAB por Atividade Econômica"),
-        plotOutput("plot_ativ", height = "500px")
-      )
+        plotOutput("plot_ativ", height = "500px"))
     ),
-
-    # ---- Aba 4: Comparativo entre territórios --------------------------------
     nav_panel("Comparativo",
-      card(
-        full_screen = TRUE,
+      card(full_screen = TRUE,
         card_header(textOutput("titulo_comp")),
-        plotOutput("plot_comp", height = "500px")
-      )
+        plotOutput("plot_comp", height = "500px"))
     ),
-
-    # ---- Aba 5: Tabela de dados ----------------------------------------------
     nav_panel("Tabela",
-      card(
-        full_screen = TRUE,
+      card(full_screen = TRUE,
         card_header("Dados numéricos"),
-        DTOutput("tabela_dados")
-      )
+        DTOutput("tabela_dados"))
     )
   )
 )
@@ -258,20 +228,47 @@ ui <- page_sidebar(
 
 server <- function(input, output, session) {
 
-  # Tema reativo dia/noite
+  # Tema dia/noite
   observe({
     session$setCurrentTheme(
       if (isTRUE(input$modo_cor == "dark"))
-        bs_theme(preset = "darkly",  version = 5)
+        bs_theme(preset = "darkly", version = 5)
       else
-        bs_theme(preset = "flatly",  version = 5)
+        bs_theme(preset = "flatly", version = 5)
     )
   })
 
-  # Dados filtrados por território
+  # Dados: carregados via JS fetch -> input$*_raw -> read.csv(textConnection())
+  serie <- reactive({
+    req(input$serie_raw)
+    read.csv(textConnection(input$serie_raw), na.strings = "")
+  })
+  vab_mac <- reactive({
+    req(input$vab_mac_raw)
+    read.csv(textConnection(input$vab_mac_raw), na.strings = "")
+  })
+  vab_ativ <- reactive({
+    req(input$vab_ativ_raw)
+    read.csv(textConnection(input$vab_ativ_raw), na.strings = "")
+  })
+
+  output$debug_dados <- renderText({
+    s_ok  <- !is.null(input$serie_raw)
+    m_ok  <- !is.null(input$vab_mac_raw)
+    a_ok  <- !is.null(input$vab_ativ_raw)
+    err   <- input$data_load_error
+    paste0(
+      if (!is.null(err)) paste0("JS ERRO: ", err, "\n") else "",
+      "serie: ",    if (s_ok) paste(nrow(serie()),    "linhas") else "carregando...", "\n",
+      "vab_mac: ",  if (m_ok) paste(nrow(vab_mac()),  "linhas") else "carregando...", "\n",
+      "vab_ativ: ", if (a_ok) paste(nrow(vab_ativ()), "linhas") else "carregando..."
+    )
+  })
+
+  # Dados filtrados
   dados_serie <- reactive({
-    req(serie)
-    serie |>
+    req(serie())
+    serie() |>
       filter(geo == input$geo, variavel == input$variavel) |>
       mutate(tipo = factor(tipo, levels = c("Histórico", "Projetado")))
   })
@@ -281,19 +278,11 @@ server <- function(input, output, session) {
     paste0(VARIAVEL_LABEL[input$variavel], " — ", input$geo)
   })
 
-  output$debug_dados <- renderText({
-    paste0(
-      "serie: ",    if (is.null(serie))    paste("ERRO:", serie_err)    else paste(nrow(serie),    "linhas"), "\n",
-      "vab_mac: ",  if (is.null(vab_mac))  paste("ERRO:", vab_mac_err)  else paste(nrow(vab_mac),  "linhas"), "\n",
-      "vab_ativ: ", if (is.null(vab_ativ)) paste("ERRO:", vab_ativ_err) else paste(nrow(vab_ativ), "linhas")
-    )
-  })
-
   output$plot_serie <- renderPlot({
     df <- dados_serie()
-    validate(need(nrow(df) > 0, paste("Sem dados para", input$geo, "/", input$variavel)))
+    validate(need(nrow(df) > 0, "Sem dados para a combinação selecionada."))
 
-    unidade <- if (eh_pct(input$variavel)) "% a.a." else "R$ bilhões"
+    unidade  <- if (eh_pct(input$variavel)) "% a.a." else "R$ bilhões"
     subtitulo <- paste0("Histórico 2002–", ANO_HIST_FIM,
                         " + Projeção ", ANO_HIST_FIM + 1L, "–", ANO_PROJ_FIM,
                         " com IC 95%")
@@ -315,7 +304,7 @@ server <- function(input, output, session) {
       ) +
       scale_x_continuous(breaks = seq(2002, ANO_PROJ_FIM, 3)) +
       formato_y(input$variavel) +
-      labs(title   = paste0(VARIAVEL_LABEL[input$variavel], " — ", input$geo),
+      labs(title    = paste0(VARIAVEL_LABEL[input$variavel], " — ", input$geo),
            subtitle = subtitulo,
            x = NULL, y = unidade,
            caption = "Fonte: IBGE (histórico); projeção própria (2024–2031).") +
@@ -324,64 +313,48 @@ server <- function(input, output, session) {
 
   # ---- Aba 2: VAB Macrossetor -----------------------------------------------
   output$plot_macro <- renderPlot({
-    validate(need(!is.null(vab_mac), paste("Erro ao carregar vab_macrossetor:", vab_mac_err)))
-    df <- vab_mac |>
+    df <- vab_mac() |>
       filter(geo == input$geo) |>
       mutate(
-        tipo       = factor(tipo, levels = c("Histórico", "Projetado")),
-        mac_label  = coalesce(MACRO_LABEL[macrossetor], macrossetor)
+        tipo      = factor(tipo, levels = c("Histórico", "Projetado")),
+        mac_label = coalesce(MACRO_LABEL[macrossetor], macrossetor)
       )
 
     if (input$macrossetor != "todos")
       df <- df |> filter(macrossetor == input$macrossetor)
 
-    req(nrow(df) > 0)
+    validate(need(nrow(df) > 0, "Sem dados para o macrossetor selecionado."))
 
     if (input$macrossetor == "todos") {
-      # Stacked area (histórico) + linhas com ribbon (projetado)
       ggplot(df, aes(x = ano, fill = mac_label, colour = mac_label)) +
-        geom_area(
-          data = \(d) filter(d, tipo == "Histórico"),
-          aes(y = vab_nominal / 1e3), position = "stack", alpha = 0.70
-        ) +
-        geom_area(
-          data = \(d) filter(d, tipo == "Projetado"),
-          aes(y = vab_nominal / 1e3), position = "stack", alpha = 0.35
-        ) +
+        geom_area(data = \(d) filter(d, tipo == "Histórico"),
+                  aes(y = vab_nominal / 1e3), position = "stack", alpha = 0.70) +
+        geom_area(data = \(d) filter(d, tipo == "Projetado"),
+                  aes(y = vab_nominal / 1e3), position = "stack", alpha = 0.35) +
         vl +
-        scale_fill_manual(values = PALETA_MACRO,   name = NULL) +
+        scale_fill_manual(values = PALETA_MACRO, name = NULL) +
         scale_colour_manual(values = PALETA_MACRO, name = NULL) +
         scale_x_continuous(breaks = seq(2002, ANO_PROJ_FIM, 3)) +
-        scale_y_continuous(
-          labels = label_number(big.mark = ".", decimal.mark = ",",
-                                accuracy = 1, suffix = " bi", scale = 1)
-        ) +
+        scale_y_continuous(labels = label_number(big.mark = ".", decimal.mark = ",",
+                                                  accuracy = 1, suffix = " bi", scale = 1)) +
         labs(title    = paste0("VAB por Macrossetor — ", input$geo),
-             subtitle = "R$ bilhões (correntes) | área empilhada; região sombreada = projetado",
+             subtitle = "R$ bilhões (correntes) | empilhado; sombreado = projetado",
              x = NULL, y = "R$ bilhões",
              caption = "Fonte: IBGE (histórico); projeção própria.") +
         tema_base
     } else {
-      # Linha única com ribbon IC 95%
       ggplot(df, aes(x = ano)) +
-        geom_ribbon(
-          aes(ymin = vab_lo95 / 1e3, ymax = vab_hi95 / 1e3),
-          data = \(d) filter(d, tipo == "Projetado", !is.na(vab_lo95)),
-          fill = COR_RIBBN, alpha = 0.20
-        ) +
+        geom_ribbon(aes(ymin = vab_lo95 / 1e3, ymax = vab_hi95 / 1e3),
+                    data = \(d) filter(d, tipo == "Projetado", !is.na(vab_lo95)),
+                    fill = COR_RIBBN, alpha = 0.20) +
         vl +
         geom_line(aes(y = vab_nominal / 1e3, colour = tipo), linewidth = 1.1) +
         geom_point(aes(y = vab_nominal / 1e3, colour = tipo), size = 2.0) +
-        scale_colour_manual(
-          values = c(Histórico = COR_HIST, Projetado = COR_PROJ), name = NULL
-        ) +
+        scale_colour_manual(values = c(Histórico = COR_HIST, Projetado = COR_PROJ), name = NULL) +
         scale_x_continuous(breaks = seq(2002, ANO_PROJ_FIM, 3)) +
-        scale_y_continuous(
-          labels = label_number(big.mark = ".", decimal.mark = ",",
-                                accuracy = 0.1, suffix = " bi")
-        ) +
-        labs(title    = paste0("VAB — ", MACRO_LABEL[input$macrossetor],
-                               " — ", input$geo),
+        scale_y_continuous(labels = label_number(big.mark = ".", decimal.mark = ",",
+                                                  accuracy = 0.1, suffix = " bi")) +
+        labs(title    = paste0("VAB — ", MACRO_LABEL[input$macrossetor], " — ", input$geo),
              subtitle = "R$ bilhões (correntes) | IC 95% no período projetado",
              x = NULL, y = "R$ bilhões",
              caption = "Fonte: IBGE (histórico); projeção própria.") +
@@ -391,8 +364,7 @@ server <- function(input, output, session) {
 
   # ---- Aba 3: VAB Atividade -------------------------------------------------
   output$plot_ativ <- renderPlot({
-    validate(need(!is.null(vab_ativ), paste("Erro ao carregar vab_atividade:", vab_ativ_err)))
-    df <- vab_ativ |>
+    df <- vab_ativ() |>
       filter(geo == input$geo) |>
       mutate(
         tipo       = factor(tipo, levels = c("Histórico", "Projetado")),
@@ -402,55 +374,39 @@ server <- function(input, output, session) {
     if (input$atividade != "todas")
       df <- df |> filter(atividade == input$atividade)
 
-    req(nrow(df) > 0)
+    validate(need(nrow(df) > 0, "Sem dados para a atividade selecionada."))
 
     if (input$atividade == "todas") {
-      # Stacked area por atividade
       ggplot(df, aes(x = ano, fill = ativ_label, colour = ativ_label)) +
-        geom_area(
-          data = \(d) filter(d, tipo == "Histórico"),
-          aes(y = vab_nominal / 1e3), position = "stack", alpha = 0.80
-        ) +
-        geom_area(
-          data = \(d) filter(d, tipo == "Projetado"),
-          aes(y = vab_nominal / 1e3), position = "stack", alpha = 0.40
-        ) +
+        geom_area(data = \(d) filter(d, tipo == "Histórico"),
+                  aes(y = vab_nominal / 1e3), position = "stack", alpha = 0.80) +
+        geom_area(data = \(d) filter(d, tipo == "Projetado"),
+                  aes(y = vab_nominal / 1e3), position = "stack", alpha = 0.40) +
         vl +
-        scale_fill_manual(values = PALETA_ATIV,   name = NULL) +
+        scale_fill_manual(values = PALETA_ATIV, name = NULL) +
         scale_colour_manual(values = PALETA_ATIV, name = NULL) +
         scale_x_continuous(breaks = seq(2002, ANO_PROJ_FIM, 3)) +
-        scale_y_continuous(
-          labels = label_number(big.mark = ".", decimal.mark = ",",
-                                accuracy = 1, suffix = " bi", scale = 1)
-        ) +
+        scale_y_continuous(labels = label_number(big.mark = ".", decimal.mark = ",",
+                                                  accuracy = 1, suffix = " bi", scale = 1)) +
         labs(title    = paste0("VAB por Atividade — ", input$geo),
              subtitle = "R$ bilhões (correntes) | empilhado; sombreado = projetado",
              x = NULL, y = "R$ bilhões",
              caption = "Fonte: IBGE (histórico); projeção própria.") +
         tema_base +
-        theme(legend.text = element_text(size = 7),
-              legend.key.size = unit(0.4, "cm"))
+        theme(legend.text = element_text(size = 7), legend.key.size = unit(0.4, "cm"))
     } else {
-      # Linha única com ribbon IC 95%
       ggplot(df, aes(x = ano)) +
-        geom_ribbon(
-          aes(ymin = vab_lo95 / 1e3, ymax = vab_hi95 / 1e3),
-          data = \(d) filter(d, tipo == "Projetado", !is.na(vab_lo95)),
-          fill = COR_RIBBN, alpha = 0.20
-        ) +
+        geom_ribbon(aes(ymin = vab_lo95 / 1e3, ymax = vab_hi95 / 1e3),
+                    data = \(d) filter(d, tipo == "Projetado", !is.na(vab_lo95)),
+                    fill = COR_RIBBN, alpha = 0.20) +
         vl +
         geom_line(aes(y = vab_nominal / 1e3, colour = tipo), linewidth = 1.1) +
         geom_point(aes(y = vab_nominal / 1e3, colour = tipo), size = 2.0) +
-        scale_colour_manual(
-          values = c(Histórico = COR_HIST, Projetado = COR_PROJ), name = NULL
-        ) +
+        scale_colour_manual(values = c(Histórico = COR_HIST, Projetado = COR_PROJ), name = NULL) +
         scale_x_continuous(breaks = seq(2002, ANO_PROJ_FIM, 3)) +
-        scale_y_continuous(
-          labels = label_number(big.mark = ".", decimal.mark = ",",
-                                accuracy = 0.1, suffix = " bi")
-        ) +
-        labs(title    = paste0("VAB — ", ATIVIDADE_LABEL[input$atividade],
-                               " — ", input$geo),
+        scale_y_continuous(labels = label_number(big.mark = ".", decimal.mark = ",",
+                                                  accuracy = 0.1, suffix = " bi")) +
+        labs(title    = paste0("VAB — ", ATIVIDADE_LABEL[input$atividade], " — ", input$geo),
              subtitle = "R$ bilhões (correntes) | IC 95% no período projetado",
              x = NULL, y = "R$ bilhões",
              caption = "Fonte: IBGE (histórico); projeção própria.") +
@@ -464,13 +420,12 @@ server <- function(input, output, session) {
   })
 
   output$plot_comp <- renderPlot({
-    validate(need(!is.null(serie), paste("Erro ao carregar serie:", serie_err)))
     validate(need(length(input$geos_comp) >= 1, "Selecione ao menos um território."))
-    df <- serie |>
+    df <- serie() |>
       filter(geo %in% input$geos_comp, variavel == input$variavel) |>
       mutate(tipo = factor(tipo, levels = c("Histórico", "Projetado")))
 
-    req(nrow(df) > 0)
+    validate(need(nrow(df) > 0, "Sem dados para a combinação selecionada."))
 
     unidade <- if (eh_pct(input$variavel)) "% a.a." else "R$ bilhões"
 
@@ -480,25 +435,18 @@ server <- function(input, output, session) {
           geom_hline(yintercept = 0, colour = "grey70",
                      linewidth = 0.3, linetype = "dotted") } +
       geom_line(linewidth = 0.9) +
-      scale_linetype_manual(
-        values = c(Histórico = "solid", Projetado = "dashed"), name = NULL
-      ) +
+      scale_linetype_manual(values = c(Histórico = "solid", Projetado = "dashed"), name = NULL) +
       scale_colour_brewer(palette = "Set2", name = NULL) +
       scale_x_continuous(breaks = seq(2002, ANO_PROJ_FIM, 3)) +
       { if (!eh_pct(input$variavel))
-          scale_y_continuous(
-            labels = label_number(big.mark = ".", decimal.mark = ",",
-                                  accuracy = 1, scale = 1e-3, suffix = " bi"))
+          scale_y_continuous(labels = label_number(big.mark = ".", decimal.mark = ",",
+                                                    accuracy = 1, scale = 1e-3, suffix = " bi"))
         else
-          scale_y_continuous(
-            labels = label_number(suffix = "%", accuracy = 0.1,
-                                  decimal.mark = ","))
+          scale_y_continuous(labels = label_number(suffix = "%", accuracy = 0.1, decimal.mark = ","))
       } +
-      labs(title    = paste0(VARIAVEL_LABEL[input$variavel],
-                             " — Comparativo entre territórios"),
+      labs(title    = paste0(VARIAVEL_LABEL[input$variavel], " — Comparativo"),
            subtitle = paste0("Histórico 2002–", ANO_HIST_FIM,
-                             " (traço contínuo) + Projeção ",
-                             ANO_HIST_FIM + 1L, "–", ANO_PROJ_FIM,
+                             " (contínuo) + Projeção ", ANO_HIST_FIM + 1L, "–", ANO_PROJ_FIM,
                              " (tracejado)"),
            x = NULL, y = unidade,
            caption = "Fonte: IBGE (histórico); projeção própria.") +
@@ -507,8 +455,7 @@ server <- function(input, output, session) {
 
   # ---- Aba 5: Tabela --------------------------------------------------------
   output$tabela_dados <- renderDT({
-    validate(need(!is.null(serie), paste("Erro ao carregar serie:", serie_err)))
-    df <- serie |>
+    df <- serie() |>
       filter(geo == input$geo, variavel == input$variavel) |>
       transmute(
         Territorio = geo,
@@ -519,12 +466,7 @@ server <- function(input, output, session) {
         LI_95      = round(lo95,  3),
         LS_95      = round(hi95,  3)
       )
-
-    datatable(
-      df,
-      options = list(pageLength = 15),
-      rownames = FALSE
-    )
+    datatable(df, options = list(pageLength = 15), rownames = FALSE)
   })
 }
 
