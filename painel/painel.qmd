@@ -136,20 +136,18 @@ ui <- page_sidebar(
 
   # JavaScript: busca CSVs + injeta botão sol/lua na navbar
   tags$head(tags$style(HTML('
-    /* Abas não selecionadas: cinza escuro */
+    /* ── Modo claro: abas em cinza/preto ── */
     .nav-tabs .nav-link,
     .card-header-tabs .nav-link,
     .bslib-card .nav-tabs .nav-link {
       color: #555555 !important;
     }
-    /* Aba selecionada: preto */
     .nav-tabs .nav-link.active,
     .card-header-tabs .nav-link.active,
     .bslib-card .nav-tabs .nav-link.active {
       color: #111111 !important;
       font-weight: 600 !important;
     }
-    /* Hover */
     .nav-tabs .nav-link:hover,
     .card-header-tabs .nav-link:hover {
       color: #222222 !important;
@@ -157,6 +155,26 @@ ui <- page_sidebar(
     /* Links gerais fora da navbar */
     a:not([class*="navbar"]):not(.paginate_button) {
       color: #333333 !important;
+    }
+
+    /* ── Modo escuro: abas em branco/cinza claro ── */
+    [data-bs-theme="dark"] .nav-tabs .nav-link,
+    [data-bs-theme="dark"] .card-header-tabs .nav-link,
+    [data-bs-theme="dark"] .bslib-card .nav-tabs .nav-link {
+      color: #aaaaaa !important;
+    }
+    [data-bs-theme="dark"] .nav-tabs .nav-link.active,
+    [data-bs-theme="dark"] .card-header-tabs .nav-link.active,
+    [data-bs-theme="dark"] .bslib-card .nav-tabs .nav-link.active {
+      color: #ffffff !important;
+      font-weight: 600 !important;
+    }
+    [data-bs-theme="dark"] .nav-tabs .nav-link:hover,
+    [data-bs-theme="dark"] .card-header-tabs .nav-link:hover {
+      color: #dddddd !important;
+    }
+    [data-bs-theme="dark"] a:not([class*="navbar"]):not(.paginate_button) {
+      color: #cccccc !important;
     }
   '))),
   tags$head(tags$script(HTML(paste0('
