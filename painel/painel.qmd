@@ -524,7 +524,19 @@ server <- function(input, output, session) {
         LS_95 = round(vab_hi95, 1)
       )
     }
-    datatable(df, options = list(pageLength = 15, scrollX = TRUE), rownames = FALSE)
+    # Formatar colunas numéricas no padrão brasileiro (vírgula decimal, ponto milhar)
+    fmt_br <- function(x, dec = 2)
+      formatC(x, format = "f", digits = dec, big.mark = ".", decimal.mark = ",",
+              big.interval = 3L)
+
+    num_cols <- names(df)[sapply(df, is.numeric)]
+    for (col in num_cols)
+      df[[col]] <- fmt_br(df[[col]])
+
+    datatable(df,
+      options = list(pageLength = 15, scrollX = TRUE,
+                     columnDefs = list(list(className = "dt-right", targets = "_all"))),
+      rownames = FALSE)
   })
 }
 
