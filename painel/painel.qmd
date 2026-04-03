@@ -496,15 +496,17 @@ server <- function(input, output, session) {
 
   # ---- Aba 5: Tabela --------------------------------------------------------
   output$tabela_dados <- renderDT({
+    lbl_valor <- if (eh_indice(input$tabela_var)) "Índice (base 100 = 2002)" else "Valor (R$ milhões)"
+
     df <- if (input$tabela_fonte == "serie") {
       serie() |>
         filter(geo == input$tabela_geo, variavel == input$tabela_var) |>
         transmute(
-          Territorio = geo, Tipo = tipo, Ano = ano,
-          Variavel   = coalesce(VARIAVEL_LABEL[variavel], variavel),
-          Valor_RS_pct = round(valor, 3),
-          LI_95 = round(lo95, 3),
-          LS_95 = round(hi95, 3)
+          Território = geo, Tipo = tipo, Ano = ano,
+          Variável   = coalesce(VARIAVEL_LABEL[variavel], variavel),
+          !!lbl_valor := round(valor, 2),
+          `Limite inferior (IC 95%)` = round(lo95, 2),
+          `Limite superior (IC 95%)` = round(hi95, 2)
         )
     } else if (input$tabela_fonte == "macrossetor") {
       d <- vab_mac() |>
@@ -512,11 +514,11 @@ server <- function(input, output, session) {
       if (input$tabela_mac != "todos")
         d <- d |> filter(macrossetor == input$tabela_mac)
       d |> transmute(
-        Territorio  = geo, Tipo = tipo, Ano = ano,
+        Território  = geo, Tipo = tipo, Ano = ano,
         Macrossetor = coalesce(MACRO_LABEL[macrossetor], macrossetor),
-        VAB_nominal_RS_mi = round(vab_nominal, 1),
-        LI_95 = round(vab_lo95, 1),
-        LS_95 = round(vab_hi95, 1)
+        `VAB Nominal (R$ milhões)` = round(vab_nominal, 1),
+        `Limite inferior (IC 95%)` = round(vab_lo95, 1),
+        `Limite superior (IC 95%)` = round(vab_hi95, 1)
       )
     } else {
       d <- vab_ativ() |>
@@ -524,15 +526,16 @@ server <- function(input, output, session) {
       if (input$tabela_ativ != "todas")
         d <- d |> filter(atividade == input$tabela_ativ)
       d |> transmute(
-        Territorio  = geo, Tipo = tipo, Ano = ano,
+        Território  = geo, Tipo = tipo, Ano = ano,
         Macrossetor = coalesce(MACRO_LABEL[macrossetor], macrossetor),
         Atividade   = coalesce(ATIVIDADE_LABEL[atividade], atividade),
-        VAB_nominal_RS_mi = round(vab_nominal, 1),
-        LI_95 = round(vab_lo95, 1),
-        LS_95 = round(vab_hi95, 1)
+        `VAB Nominal (R$ milhões)` = round(vab_nominal, 1),
+        `Limite inferior (IC 95%)` = round(vab_lo95, 1),
+        `Limite superior (IC 95%)` = round(vab_hi95, 1)
       )
     }
-    # Formatar colunas numéricas no padrão brasileiro (vírgula decimal, ponto milhar)
+
+    # Formatar colunas numéricas no padrão brasileiro
     fmt_br <- function(x, dec = 2)
       formatC(x, format = "f", digits = dec, big.mark = ".", decimal.mark = ",",
               big.interval = 3L)
@@ -541,8 +544,13 @@ server <- function(input, output, session) {
     for (col in num_cols)
       df[[col]] <- fmt_br(df[[col]])
 
+    # Substituir "NA" por vazio (histórico não tem IC)
+    for (col in names(df))
+      if (is.character(df[[col]])) df[[col]][df[[col]] == "NA"] <- ""
+
     datatable(df,
-      options = list(pageLength = 15, scrollX = TRUE,
+      options = list(paging = FALSE, scrollX = TRUE, scrollY = "480px",
+                     dom = "t",
                      columnDefs = list(list(className = "dt-right", targets = "_all"))),
       rownames = FALSE)
   })

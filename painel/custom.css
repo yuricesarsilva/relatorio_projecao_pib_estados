@@ -34,7 +34,7 @@
   font-weight: 500 !important;
 }
 
-/* ── Inputs: borda sutil, sem cor de destaque azul ─────────── */
+/* ── Inputs: borda sutil, sem destaque colorido ─────────────── */
 .sidebar .form-control,
 .sidebar .form-select {
   border-color: #d0d0d0 !important;
@@ -48,40 +48,103 @@
   box-shadow: 0 0 0 2px rgba(0,0,0,0.08) !important;
 }
 
-/* ── Radio buttons: remover cor de destaque ─────────────────── */
+/* ── Radio buttons: preto no lugar de verde ─────────────────── */
 .sidebar .form-check-input:checked {
-  background-color: #444444 !important;
-  border-color: #444444 !important;
+  background-color: #333333 !important;
+  border-color: #333333 !important;
 }
 
-/* ── Slider: trilho e bolinha em cinza ──────────────────────── */
+/* ── Slider: trilho e bolinha em cinza escuro ───────────────── */
 .irs--shiny .irs-bar,
 .irs--shiny .irs-handle {
-  background: #444444 !important;
-  border-color: #444444 !important;
+  background: #333333 !important;
+  border-color: #333333 !important;
 }
 
 .irs--shiny .irs-from,
 .irs--shiny .irs-to,
 .irs--shiny .irs-single {
-  background: #444444 !important;
+  background: #333333 !important;
 }
 
-/* ── Abas do painel (nav tabs): sem cor de destaque ────────── */
-.nav-tabs .nav-link.active {
+/* ── Abas do painel (navset_card_tab): sem verde ────────────── */
+.nav-tabs .nav-link {
+  color: #666666 !important;
+  border-bottom: 2px solid transparent !important;
+}
+
+.nav-tabs .nav-link.active,
+.nav-tabs .nav-link:focus {
   color: #111111 !important;
   border-bottom: 2px solid #111111 !important;
+  background-color: transparent !important;
   font-weight: 600 !important;
 }
 
-.nav-tabs .nav-link {
-  color: #666666 !important;
+.nav-tabs .nav-link:hover {
+  color: #333333 !important;
+  border-bottom: 2px solid #888888 !important;
 }
 
-/* ── Card headers: texto escuro ─────────────────────────────── */
+/* Remove qualquer cor primária (verde flatly) nos links ativos */
+.nav-pills .nav-link.active,
+.nav-pills .show > .nav-link {
+  background-color: #333333 !important;
+  color: #ffffff !important;
+}
+
+/* ── Card headers ───────────────────────────────────────────── */
 .card-header {
   color: #222222 !important;
   font-weight: 600 !important;
   background-color: #ffffff !important;
   border-bottom: 1px solid #eeeeee !important;
+}
+
+/* ── DataTables: paginação e botões sem verde ───────────────── */
+.dataTables_wrapper .dataTables_paginate .paginate_button.current,
+.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+  background: #222222 !important;
+  color: #ffffff !important;
+  border-color: #222222 !important;
+  border-radius: 4px !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+  background: #eeeeee !important;
+  color: #111111 !important;
+  border-color: #cccccc !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+  color: #444444 !important;
+}
+
+.dataTables_wrapper select,
+.dataTables_wrapper input {
+  border-color: #d0d0d0 !important;
+  box-shadow: none !important;
+}
+
+.dataTables_wrapper select:focus,
+.dataTables_wrapper input:focus {
+  border-color: #888888 !important;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.08) !important;
+  outline: none !important;
+}
+
+/* Cabeçalho da tabela */
+table.dataTable thead th {
+  color: #222222 !important;
+  border-bottom: 2px solid #cccccc !important;
+  font-weight: 600 !important;
+}
+
+/* Linhas alternadas suaves */
+table.dataTable tbody tr:nth-child(odd) {
+  background-color: #fafafa !important;
+}
+
+table.dataTable tbody tr:hover {
+  background-color: #f0f0f0 !important;
 }
