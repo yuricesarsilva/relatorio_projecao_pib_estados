@@ -1,5 +1,5 @@
 ---
-title: "Painel de Projeção do PIB dos Estados"
+title: "Secretaria de Planejamento e Orçamento de Roraima — SEPLAN/RR<br><span style='font-size:0.75em; font-weight:400; opacity:0.85;'>Coordenação-Geral de Estudos Econômicos e Sociais — CGEES</span>"
 format:
   dashboard:
     output-file: index.html
