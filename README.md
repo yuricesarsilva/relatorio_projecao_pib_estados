@@ -10,7 +10,7 @@ Projeções do PIB nominal, VAB por macrossetor e atividade, impostos, deflatore
 
 Acesse o painel com os resultados em:
 
-**[https://yuricesarsilva.github.io/relatorio_projecao_pib_estados](https://yuricesarsilva.github.io/relatorio_projecao_pib_estados)**
+**[https://yuricesarsilva.github.io/painel_projecao_pib_estados](https://yuricesarsilva.github.io/painel_projecao_pib_estados)**
 
 O painel permite visualizar:
 - Séries históricas (2002–2023) e projeções (2024–2031) com intervalo de confiança de 95%

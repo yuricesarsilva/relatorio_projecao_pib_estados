@@ -9,7 +9,7 @@ format:
     logo: ""
     nav-buttons:
       - icon: github
-        href: https://github.com/yuricesarsilva/relatorio_projecao_pib_estados
+        href: https://github.com/yuricesarsilva/painel_projecao_pib_estados
 filters:
   - shinylive
 resources:
@@ -123,7 +123,7 @@ formato_y <- function(var) {
                                              suffix = " bi"))
 }
 
-BASE_URL <- "https://yuricesarsilva.github.io/relatorio_projecao_pib_estados/data"
+BASE_URL <- "https://yuricesarsilva.github.io/painel_projecao_pib_estados/data"
 
 # ==============================================================================
 # UI

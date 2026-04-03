@@ -5,7 +5,7 @@
 **O que foi feito:**
 - Definido o escopo do projeto: projetar PIB nominal, VAB nominal (total e por atividade), impostos líquidos de subsídios, deflatores, taxa de crescimento real e VAB por 4 macrossetores para 27 UFs + 5 regiões + Brasil, com restrições de agregação contábil obrigatórias.
 - Criado `plano_projeto.md` com objetivo, variáveis, macrossetores, fontes de dados e estrutura proposta de scripts.
-- Criado repositório GitHub `yuricesarsilva/relatorio_projecao_pib_estados` (privado).
+- Criado repositório GitHub `yuricesarsilva/painel_projecao_pib_estados` (privado).
 - Configurado git no diretório do projeto com `.gitignore` excluindo `base_bruta/`, `dados/` e `output/`.
 
 **Arquivos criados:** `plano_projeto.md`, `.gitignore`
@@ -326,7 +326,7 @@ para que o CV seja refeito com as 1.089 séries completas.
 1. Rodar pipeline completo (`run_all.R`) localmente — gera `painel/data/*.csv`
 2. Commitar os CSVs (`git add painel/data/`)
 3. `git push` → GitHub Actions renderiza e publica em `gh-pages` automaticamente
-4. URL pública: `https://yuricesarsilva.github.io/relatorio_projecao_pib_estados/`
+4. URL pública: `https://yuricesarsilva.github.io/painel_projecao_pib_estados/`
 
 **Pré-requisito local (uma vez):** instalar a extensão shinylive com:
 ```

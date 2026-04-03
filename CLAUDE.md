@@ -16,7 +16,7 @@
    `Corrige cálculo do deflator projetado`.
 
 3. **Fazer push** para o repositório remoto:
-   `https://github.com/yuricesarsilva/relatorio_projecao_pib_estados.git`
+   `https://github.com/yuricesarsilva/painel_projecao_pib_estados.git`
 
    Comando: `git push origin main`
 
