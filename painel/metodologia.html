@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Metodologia — Projeções dos PIBs Estaduais</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Georgia", serif;
+      font-size: 1rem;
+      line-height: 1.8;
+      color: #222;
+      background: #fff;
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 48px 32px 80px;
+    }
+
+    header {
+      border-bottom: 2px solid #000;
+      padding-bottom: 20px;
+      margin-bottom: 40px;
+    }
+
+    header .instituicao {
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #666;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      font-size: 1.65rem;
+      font-weight: 700;
+      line-height: 1.25;
+      margin-bottom: 10px;
+    }
+
+    header .subtitulo {
+      font-size: 0.9rem;
+      color: #555;
+    }
+
+    nav.indice {
+      background: #f7f7f7;
+      border-left: 3px solid #000;
+      padding: 20px 24px;
+      margin-bottom: 48px;
+      font-size: 0.88rem;
+    }
+
+    nav.indice p {
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+      color: #444;
+    }
+
+    nav.indice ol {
+      padding-left: 20px;
+    }
+
+    nav.indice li {
+      margin-bottom: 4px;
+    }
+
+    nav.indice a {
+      color: #222;
+      text-decoration: none;
+      border-bottom: 1px dotted #999;
+    }
+
+    nav.indice a:hover { color: #000; border-bottom-color: #000; }
+
+    section { margin-bottom: 48px; }
+
+    h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 8px;
+      margin-bottom: 20px;
+      margin-top: 48px;
+    }
+
+    h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-top: 28px;
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    p { margin-bottom: 14px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin: 20px 0 28px;
+    }
+
+    th {
+      background: #111;
+      color: #fff;
+      text-align: left;
+      padding: 8px 12px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+
+    td {
+      padding: 8px 12px;
+      border-bottom: 1px solid #e8e8e8;
+      vertical-align: top;
+    }
+
+    tr:nth-child(even) td { background: #f9f9f9; }
+
+    .destaque {
+      background: #f5f5f5;
+      border-left: 3px solid #555;
+      padding: 14px 18px;
+      margin: 20px 0;
+      font-size: 0.92rem;
+      color: #333;
+    }
+
+    .aviso {
+      background: #fff8e1;
+      border-left: 3px solid #888;
+      padding: 14px 18px;
+      margin: 20px 0;
+      font-size: 0.92rem;
+      color: #444;
+    }
+
+    footer {
+      margin-top: 64px;
+      border-top: 1px solid #ddd;
+      padding-top: 20px;
+      font-size: 0.78rem;
+      color: #888;
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    a.voltar {
+      display: inline-block;
+      margin-bottom: 32px;
+      font-size: 0.85rem;
+      color: #444;
+      text-decoration: none;
+      border-bottom: 1px solid #ccc;
+    }
+
+    a.voltar:hover { color: #000; border-bottom-color: #000; }
+
+    @media (max-width: 600px) {
+      body { padding: 28px 18px 60px; }
+      footer { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<a class="voltar" href="index.html">← Voltar ao Painel</a>
+
+<header>
+  <div class="instituicao">Secretaria de Planejamento e Orçamento de Roraima — SEPLAN/RR &nbsp;|&nbsp; CGEES</div>
+  <h1>Nota Metodológica<br>Projeções dos PIBs Estaduais 2024–2031</h1>
+  <div class="subtitulo">Versão 1.0 &nbsp;·&nbsp; Abril de 2026 &nbsp;·&nbsp; Yuri Cesar de Lima e Silva</div>
+</header>
+
+<nav class="indice">
+  <p>Sumário</p>
+  <ol>
+    <li><a href="#base">Base de dados</a></li>
+    <li><a href="#variaveis">Variáveis modeladas</a></li>
+    <li><a href="#modelos">Modelos candidatos</a></li>
+    <li><a href="#selecao">Seleção de modelos por validação cruzada</a></li>
+    <li><a href="#projecao">Geração das projeções</a></li>
+    <li><a href="#reconciliacao">Reconciliação das agregações</a></li>
+    <li><a href="#ic">Intervalos de confiança</a></li>
+    <li><a href="#indices">Índices acumulados de volume e deflator</a></li>
+    <li><a href="#interpretacao">Como interpretar as projeções</a></li>
+    <li><a href="#limitacoes">Limitações e ressalvas</a></li>
+  </ol>
+</nav>
+
+<!-- 1 -->
+<section id="base">
+  <h2>1. Base de dados</h2>
+  <p>
+    A base histórica utilizada é o <strong>Sistema de Contas Regionais (SCR)</strong> do Instituto Brasileiro de
+    Geografia e Estatística (IBGE), que publica anualmente as estimativas do Produto Interno Bruto (PIB) e do
+    Valor Adicionado Bruto (VAB) por unidade da federação.
+  </p>
+  <p>
+    O período histórico cobre <strong>2002 a 2023</strong> (22 observações anuais), desagregado por:
+  </p>
+  <ul style="padding-left:24px; margin-bottom:14px;">
+    <li><strong>Território:</strong> 27 unidades federativas, 5 macrorregiões e o Brasil — totalizando 33 unidades geográficas.</li>
+    <li><strong>Atividade econômica:</strong> 12 atividades do SCR (agropecuária, indústria extrativa, indústria de transformação, eletricidade/gás/água, construção, comércio, transporte, informação/comunicação, financeiro, imobiliário, administração pública e outros serviços).</li>
+    <li><strong>Macrossetor:</strong> 4 agregações (agropecuária, indústria, serviços e administração pública).</li>
+  </ul>
+  <p>
+    Para cada atividade e unidade geográfica, o SCR disponibiliza o <em>valor corrente</em> (preços do ano)
+    e o <em>valor a preços do ano anterior</em>, que permitem calcular os índices encadeados de volume e preço.
+  </p>
+</section>
+
+<!-- 2 -->
+<section id="variaveis">
+  <h2>2. Variáveis modeladas</h2>
+  <p>
+    A estratégia de modelagem opera sobre índices encadeados — e não sobre valores nominais —
+    pois esses índices são mais estacionários e comparáveis entre territórios de escalas muito diferentes
+    (Roraima e São Paulo, por exemplo).
+  </p>
+  <table>
+    <thead>
+      <tr><th>Variável modelada</th><th>Grupo</th><th>Nº de séries</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Índice de volume e índice de preço por macrossetor</td>
+        <td>A — Macrossetor × geo</td>
+        <td>264 séries (4 macros × 33 geos × 2 índices)</td>
+      </tr>
+      <tr>
+        <td>Logaritmo dos impostos líquidos de subsídios</td>
+        <td>B — Impostos × geo</td>
+        <td>33 séries</td>
+      </tr>
+      <tr>
+        <td>Índice de volume e índice de preço por atividade</td>
+        <td>C — Atividade × geo</td>
+        <td>~792 séries (12 atividades × 33 geos × 2 índices)</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    Os <strong>valores nominais projetados</strong> (PIB, VAB, impostos) são obtidos por derivação contábil
+    a partir desses índices, encadeados ao nível observado em 2023 — ou seja, os modelos estatísticos
+    nunca veem valores em reais diretamente.
+  </p>
+</section>
+
+<!-- 3 -->
+<section id="modelos">
+  <h2>3. Modelos candidatos</h2>
+  <p>
+    Para cada uma das ~1.089 séries, dez modelos de séries temporais são estimados e avaliados:
+  </p>
+  <table>
+    <thead>
+      <tr><th>Sigla</th><th>Modelo</th><th>Característica principal</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>RW</td><td>Passeio aleatório (<em>random walk</em>)</td><td>Linha de base simples; assume que o melhor palpite para amanhã é hoje</td></tr>
+      <tr><td>ARMA</td><td>Média móvel autorregressiva</td><td>Captura dependência linear de curto prazo sem tendência estocástica</td></tr>
+      <tr><td>ARIMA</td><td>ARIMA automático</td><td>Inclui diferenciação; seleção automática de ordem por AIC</td></tr>
+      <tr><td>SARIMA</td><td>ARIMA sazonal (período 2)</td><td>Captura ciclos bienais em dados anuais</td></tr>
+      <tr><td>ETS</td><td>Suavização exponencial</td><td>Modela nível, tendência e sazonalidade de forma adaptativa</td></tr>
+      <tr><td>ETS-A</td><td>ETS com tendência amortecida</td><td>Projeta crescimento desacelerando ao longo do horizonte</td></tr>
+      <tr><td>THETA</td><td>Método Theta</td><td>Vencedor da competição M3; combina regressão linear e suavização</td></tr>
+      <tr><td>NNAR</td><td>Rede neural autorregressiva</td><td>Captura não-linearidades; média de múltiplas redes</td></tr>
+      <tr><td>PROPHET</td><td>Prophet (Meta)</td><td>Decompõe tendência, sazonalidade e efeitos de calendário</td></tr>
+      <tr><td>SSM</td><td>Modelo de espaço de estados (<em>local linear trend</em>)</td><td>Filtro de Kalman via MLE; separa componente de nível e tendência</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 4 -->
+<section id="selecao">
+  <h2>4. Seleção de modelos por validação cruzada</h2>
+  <p>
+    A escolha do modelo para cada série é feita por <strong>validação cruzada com janela expansível
+    (<em>expanding window cross-validation</em>)</strong>. O procedimento consiste em:
+  </p>
+  <ol style="padding-left:24px; margin-bottom:14px; line-height:2;">
+    <li>Fixar um tamanho mínimo de treino de <strong>15 observações</strong> (o que implica que o primeiro conjunto de teste começa em 2017).</li>
+    <li>A cada passo, expandir o conjunto de treino em um ano, estimar todos os dez modelos e gerar previsões para os anos seguintes.</li>
+    <li>Calcular o <strong>MASE</strong> (<em>Mean Absolute Scaled Error</em>) acumulado para cada modelo — uma métrica que escala o erro pela dificuldade da série, permitindo comparação entre séries de magnitudes muito diferentes.</li>
+    <li>Selecionar o modelo com <strong>menor MASE médio</strong> no período de validação.</li>
+  </ol>
+  <div class="destaque">
+    <strong>Por que MASE?</strong> Ao contrário do RMSE ou do MAPE, o MASE é robusto a séries com valores próximos de zero e não penaliza desproporcionalmente erros em séries muito voláteis. Ele compara o erro do modelo com o erro de um passeio aleatório simples, sendo valores abaixo de 1,0 indicativos de que o modelo supera a linha de base.
+  </div>
+  <p>
+    Para a <strong>projeção final</strong> (após a seleção), os modelos ARIMA e ARMA são reestimados sem a opção de aproximação numérica, garantindo maior precisão nos parâmetros.
+  </p>
+</section>
+
+<!-- 5 -->
+<section id="projecao">
+  <h2>5. Geração das projeções</h2>
+  <p>
+    Com o modelo selecionado, cada série é projetada para o horizonte de <strong>2024 a 2031 (8 anos)</strong>.
+    Os índices de volume e preço projetados são então encadeados ao valor de 2023 para reconstruir os
+    valores nominais:
+  </p>
+  <ul style="padding-left:24px; margin-bottom:14px; line-height:2;">
+    <li><strong>VAB nominal por macrossetor</strong> = VAB<sub>2023</sub> × ∏(índice de volume × índice de preço)</li>
+    <li><strong>VAB nominal total</strong> = soma dos macrossetores por território e ano</li>
+    <li><strong>Impostos</strong> = exp(log-impostos projetados)</li>
+    <li><strong>PIB nominal</strong> = VAB nominal total + impostos</li>
+    <li><strong>Crescimento real do PIB</strong> = média ponderada dos índices de volume (pesos = VAB<sub>2023</sub>)</li>
+    <li><strong>Deflator</strong> = PIB nominal / (PIB<sub>2023</sub> × índice de volume acumulado)</li>
+  </ul>
+</section>
+
+<!-- 6 -->
+<section id="reconciliacao">
+  <h2>6. Reconciliação das agregações</h2>
+  <p>
+    As projeções individuais para cada unidade federativa são produzidas de forma independente, o que pode
+    gerar <strong>inconsistências de agregação</strong>: a soma dos estados projetados pode não coincidir
+    com a projeção da respectiva região, e a soma das regiões pode divergir do Brasil projetado.
+  </p>
+  <p>
+    Para garantir a coerência interna, aplica-se o método de <strong>benchmarking proporcional top-down</strong>:
+  </p>
+  <ol style="padding-left:24px; margin-bottom:14px; line-height:2;">
+    <li>O PIB do <strong>Brasil</strong> é usado como âncora — seu valor projetado permanece inalterado.</li>
+    <li>Cada <strong>macrorregião</strong> é escalonada proporcionalmente para que a soma das cinco regiões iguale o Brasil.</li>
+    <li>Cada <strong>estado</strong> é escalonado dentro de sua região para que a soma dos estados iguale a região ajustada.</li>
+    <li>Os subcomponentes (VAB e impostos) são corrigidos pelo mesmo fator de escalonamento, garantindo que a identidade contábil <em>PIB = VAB + Impostos</em> se mantenha em todos os níveis.</li>
+    <li>Os macrossetores e as atividades individuais recebem ajuste proporcional para que a soma bata com o VAB total reconciliado.</li>
+  </ol>
+  <div class="destaque">
+    Esta abordagem preserva a estrutura interna de cada projeção e concentra o ajuste no escalonamento proporcional, sem alterar as taxas de crescimento relativas entre territórios.
+  </div>
+</section>
+
+<!-- 7 -->
+<section id="ic">
+  <h2>7. Intervalos de confiança (IC 95%)</h2>
+  <p>
+    Cada modelo gera, além da projeção central, um <strong>intervalo de confiança de 95%</strong> — ou seja,
+    uma faixa dentro da qual se espera que o valor real se situe em 95% dos casos, assumindo que o modelo
+    esteja bem especificado e que os padrões históricos se mantenham.
+  </p>
+  <p>
+    Os intervalos são propagados para os valores nominais por meio das relações contábeis, seguindo o
+    princípio de que o limite inferior de um produto é obtido combinando os piores cenários
+    individuais (crescimento real baixo <em>e</em> deflação) e o limite superior combina os melhores
+    (crescimento real alto <em>e</em> inflação).
+  </p>
+  <p>
+    Os intervalos de confiança <strong>se alargam ao longo do tempo</strong>: horizontes mais distantes
+    carregam maior incerteza acumulada. Isso é esperado e desejável — reflete honestamente o que
+    os modelos sabem (e não sabem) sobre o futuro.
+  </p>
+  <div class="aviso">
+    <strong>Atenção:</strong> Os intervalos assumem que os erros futuros seguem distribuição similar à dos erros históricos. Choques extraordinários — crises, pandemias, mudanças bruscas de política — podem colocar o valor real fora do intervalo mesmo que tudo tenha sido feito corretamente.
+  </div>
+</section>
+
+<!-- 8 -->
+<section id="indices">
+  <h2>8. Índices acumulados de volume e deflator</h2>
+  <p>
+    No painel, as séries de crescimento real e deflator são apresentadas como <strong>índices acumulados
+    com base 100 em 2002</strong>, em vez de taxas de crescimento anuais. Essa escolha facilita a
+    comparação de trajetórias de longo prazo entre territórios: um índice de 250 em 2023 significa
+    que o PIB real daquele território é 2,5 vezes maior do que em 2002.
+  </p>
+  <p>
+    O índice de volume acumulado é calculado como:
+  </p>
+  <div class="destaque">
+    <em>idx_vol<sub>t</sub></em> = (vol_enc<sub>t</sub> / vol_enc<sub>2002</sub>) × 100
+  </div>
+  <p>
+    O deflator implícito acumulado é calculado como:
+  </p>
+  <div class="destaque">
+    <em>idx_def<sub>t</sub></em> = (PIB_nominal<sub>t</sub> / PIB_nominal<sub>2002</sub>) / (idx_vol<sub>t</sub> / 100) × 100
+  </div>
+</section>
+
+<!-- 9 -->
+<section id="interpretacao">
+  <h2>9. Como interpretar as projeções</h2>
+  <div class="aviso">
+    <strong>Projeções não são previsões infalíveis.</strong> Elas representam o comportamento mais provável
+    das variáveis caso as tendências e padrões históricos se mantenham — o que raramente ocorre de forma
+    perfeita por períodos tão longos quanto oito anos.
+  </div>
+  <p>
+    A forma correta de leitura é a de <strong>cenários condicionais</strong>:
+  </p>
+  <ul style="padding-left:24px; margin-bottom:14px; line-height:2;">
+    <li><strong>Projeção central:</strong> o resultado mais provável dado o comportamento histórico da série.</li>
+    <li><strong>Limite inferior (IC 95%):</strong> um cenário pessimista compatível com a variabilidade histórica.</li>
+    <li><strong>Limite superior (IC 95%):</strong> um cenário otimista compatível com a variabilidade histórica.</li>
+  </ul>
+  <p>
+    Quanto mais distante o horizonte, mais ampla será a faixa entre os limites — e mais humildade devemos
+    ter ao interpretar os números. As projeções para 2024 e 2025 tendem a ser substancialmente mais
+    confiáveis do que aquelas para 2030 e 2031.
+  </p>
+  <p>
+    Essas projeções <strong>não incorporam</strong> choques futuros desconhecidos (crises financeiras,
+    desastres naturais, mudanças de política fiscal, entre outros). Seu uso mais adequado é como
+    referência de planejamento de médio prazo e ponto de partida para análises de sensibilidade.
+  </p>
+</section>
+
+<!-- 10 -->
+<section id="limitacoes">
+  <h2>10. Limitações e ressalvas</h2>
+  <ul style="padding-left:24px; margin-bottom:14px; line-height:2.1;">
+    <li><strong>Séries curtas:</strong> com apenas 22 observações anuais (2002–2023), os modelos têm pouca
+      informação para estimar ciclos longos ou estruturas complexas.</li>
+    <li><strong>Revisões do IBGE:</strong> as Contas Regionais são revisadas periodicamente; projeções
+      baseadas em dados preliminares podem divergir das versões definitivas.</li>
+    <li><strong>Hipótese de estacionariedade:</strong> a maioria dos modelos assume que os padrões de
+      crescimento do passado se repetirão. Mudanças estruturais nas economias estaduais invalidam
+      essa hipótese.</li>
+    <li><strong>Reconciliação top-down:</strong> o método preserva a hierarquia geográfica mas pode
+      atenuar projeções de crescimento acelerado em estados pequenos quando a âncora Brasil projeta
+      crescimento moderado.</li>
+    <li><strong>Dados de 2023:</strong> o último ano disponível nas Contas Regionais ao momento da
+      elaboração é 2023. As projeções para 2024 em diante partem desse ponto.</li>
+  </ul>
+</section>
+
+<footer>
+  <span>Secretaria de Planejamento e Orçamento de Roraima — SEPLAN/RR · CGEES · 2026</span>
+  <span>Fonte: IBGE, Sistema de Contas Regionais (2002–2023)</span>
+</footer>
+
+</body>
+</html>

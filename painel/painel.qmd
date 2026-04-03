@@ -13,6 +13,7 @@ filters:
   - shinylive
 resources:
   - data/
+  - metodologia.html
 engine: knitr
 execute:
   echo: false
@@ -288,8 +289,12 @@ ui <- page_sidebar(
       "align-items:center; font-size:0.76em; color:#111; line-height:1.3;"
     ),
     tags$span(
-      "Fonte: IBGE Contas Regionais (2002–2023). ",
-      "Projeções próprias com reconciliação top-down (2024–2031)."
+      "Fonte: IBGE Contas Regionais (2002–2023). Projeções próprias com reconciliação top-down (2024–2031). ",
+      tags$a(
+        href = "metodologia.html", target = "_blank",
+        style = "color:#111; font-weight:600; border-bottom:1px solid #999; text-decoration:none;",
+        "Ver metodologia"
+      )
     ),
     tags$span(
       style = "text-align:right;",
