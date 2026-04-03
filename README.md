@@ -14,10 +14,13 @@ Acesse o painel com os resultados em:
 
 O painel permite visualizar:
 - Séries históricas (2002–2023) e projeções (2024–2031) com intervalo de confiança de 95%
-- PIB nominal, VAB total, impostos, crescimento real e deflator
+- PIB nominal, VAB total, impostos, PIB real acumulado e deflator implícito acumulado (índices base 100 = 2002)
 - VAB desagregado por macrossetor (agropecuária, indústria, serviços, administração pública)
 - VAB desagregado por atividade econômica (12 atividades)
 - Comparativo entre territórios
+- Tabela interativa com todas as variáveis e fontes de dados (série principal, macrossetor, atividade)
+- Filtro de anos de projeção exibidos (padrão: 3 anos, máximo: 8 anos)
+- Números formatados no padrão brasileiro (vírgula decimal, ponto milhar)
 - Filtros por território (UF, região, Brasil) e variável
 - Modo claro/escuro
 
@@ -141,7 +144,7 @@ git push origin main
 | `output/graficos/todas_geos/` | 21 plots facetados por variável |
 | `output/graficos/por_geo/` | 33 plots individuais por território |
 | `output/graficos/por_geo_atividade/` | 33 gráficos de área empilhada por atividade |
-| `painel/data/serie_principal.csv` | Séries históricas + projetadas, 5 variáveis, IC 95% |
+| `painel/data/serie_principal.csv` | Séries históricas + projetadas, 5 variáveis (incl. índices acumulados base 100=2002), IC 95% |
 | `painel/data/vab_macrossetor.csv` | VAB histórico + projetado por macrossetor, IC 95% |
 | `painel/data/vab_atividade.csv` | VAB histórico + projetado por atividade, IC 95% |
 
