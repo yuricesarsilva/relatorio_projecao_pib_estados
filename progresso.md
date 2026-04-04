@@ -553,118 +553,25 @@ O diretório `_extensions/` gerado deve ser commitado junto com o painel.
 - [x] `R/04_reconciliacao.R` — garantir restrições de agregação nas projeções
 - [x] `R/05_output.R` — gerar tabelas e gráficos de resultado
 - [x] `run_all.R` — orquestrador do pipeline completo
+
 ---
 
-## Etapa 15 â€” Preview local do painel com dados versionados
+## Etapa 15 — Preview local mínimo após o Bloco 3
+
+**Objetivo:**
+- manter a base exatamente no estado pós-Bloco 3 da reforma e adicionar apenas o mínimo necessário para inspecionar o painel localmente.
 
 **O que foi feito:**
-- Ajustado `painel/painel.qmd` para usar caminho relativo (`data`) na carga dos CSVs do painel.
-- Ajustado o link da nota metodolÃ³gica no painel para `metodologia.html`, permitindo navegaÃ§Ã£o local sem depender do GitHub Pages.
-- Atualizado `README.md` com instruÃ§Ãµes de preview local via `quarto preview painel/painel.qmd` e renderizaÃ§Ã£o local via `quarto render painel/painel.qmd`.
-- Atualizado `checklist_reforma.md`, marcando como concluÃ­do o suporte a preview local do painel com dados de `painel/data/`.
+- criada a branch `preview-local-minimo` a partir do commit `6f88613` (`Qualifica: torna o QA bloqueante e separa horizonte operacional`);
+- criado `preview_painel_local.R`, que:
+  - extrai o bloco `shinylive-r` de `painel/painel.qmd`;
+  - substitui apenas em memória as URLs publicadas por recursos locais (`/data` e `/metodologia/metodologia.html`);
+  - sobe o app com `shiny::runApp()` sem alterar `painel/painel.qmd`;
+- criado `preview_painel_local.ps1` para facilitar a execução no Windows usando o `Rscript.exe` do R 4.4.0;
+- atualizado `README.md` com as instruções de uso do preview local mínimo.
 
-**Resultado prÃ¡tico:**
-- O painel local deixa de buscar os CSVs publicados em `github.io` e passa a usar os dados atuais presentes em `painel/data/`.
-- Isso permite revisar mudanÃ§as visuais e tambÃ©m os dados locais antes do deploy no GitHub Pages.
-
-**Arquivos modificados:** `painel/painel.qmd`, `README.md`, `checklist_reforma.md`
----
-
-## Etapa 16 — Ajuste do ambiente do preview local
-
-**O que foi feito:**
-- Instalado `shinylive` no ambiente `renv` do projeto e atualizado `renv.lock`.
-- Criado `painel/.Rprofile` para ativar `../renv/activate.R` quando o Quarto renderiza a partir de `painel/`.
-- Atualizado `README.md` e `checklist_reforma.md` para refletir esse ajuste operacional.
+**Arquivos criados:** `preview_painel_local.R`, `preview_painel_local.ps1`
+**Arquivos modificados:** `README.md`
 
 **Resultado prático:**
-- O preview local do painel passa a usar o mesmo ambiente do projeto, mesmo quando a renderização parte do diretório `painel/`.
-
-**Ajuste complementar:**
-- Criados `preview_painel.ps1` e `render_painel.ps1` para abrir preview e renderizar o painel usando automaticamente o `.Rprofile` da raiz do projeto.
-- Criado `preview_painel.R` para permitir a abertura do preview tambÃ©m via `Rscript`, sem depender de PowerShell.
-
-**Arquivos modificados:** `renv.lock`, `painel/.Rprofile`, `README.md`, `checklist_reforma.md`, `preview_painel.ps1`, `render_painel.ps1`, `preview_painel.R`
-
-**Correcao complementar do ambiente:**
-- Ajustados `preview_painel.R`, `preview_painel.ps1` e `render_painel.ps1` para repassar explicitamente `R_PROFILE_USER`, `R_LIBS_USER` e `RENV_PROJECT` ao Quarto.
-- Isso evita que o `Rscript` interno do filtro `shinylive` rode fora da biblioteca do `renv`.
-
-**Correcao do script R de preview:**
-- Ajustado `preview_painel.R` para definir as variaveis de ambiente com `Sys.setenv()` antes do `system2()`, em vez de usar o argumento `env`, que no Windows acabou sendo interpretado como argumento do Quarto.
-
-**Correcao adicional do ambiente do Quarto:**
-- Ajustados `preview_painel.R`, `preview_painel.ps1` e `render_painel.ps1` para forcar tambem `R_HOME` e o `PATH` do R 4.4.0.
-- Isso aumenta a chance de o Quarto chamar o mesmo `Rscript` que enxerga o `shinylive` instalado no projeto.
-
-**Correcao da raiz do projeto para preview:**
-- Ajustado `.Rprofile` da raiz para carregar `renv/activate.R` a partir de `RENV_PROJECT` quando essa variavel estiver definida.
-- Isso evita falha quando o Quarto ou o `Rscript` executam em subdiretorios como `painel/`.
-
-**Correcao do render do Shinylive no preview:**
-- Ajustado `painel/painel.qmd` para definir `embed-resources: false` no formato dashboard.
-- Isso evita que o Quarto gere um HTML auto-contido incompatível com a execução do `shinylive` no preview local.
-
-**Correcao de dependencias do preview:**
-- Instalado `DT` no ambiente `renv` do projeto para atender a dependencia usada por `painel/painel.qmd`.
-- O lockfile permaneceu atualizado apos a instalacao.
-- Instalado `S7` no ambiente `renv` do projeto para atender a dependencia exigida por `ggplot2` no runtime do `shinylive`.
-- Ajustado `painel/painel.qmd` para carregar `library(S7)` explicitamente no bloco `shinylive-r`.
-- Isso forca o empacotamento de `S7` na build WebAssembly do preview local, evitando tela branca causada pela falha de inicializacao do `ggplot2` no navegador.
-- Ajustados os caminhos do preview local de `data` para `../data` e de `metodologia.html` para `../metodologia.html`.
-- Isso corrige a resolucao de recursos quando o app `shinylive` roda dentro da rota `app_*`, evitando que os fetchs dos CSVs apontem para um caminho inexistente.
-- Adicionado `showNotification()` no server para exibir a causa textual quando a carga dos CSVs falhar no navegador, substituindo mensagens opacas como `[object Object]`.
-- Ajustadas as camadas opcionais dos graficos em `painel/painel.qmd` para retornarem listas vazias em vez de `NULL`.
-- Isso corrige o erro `object must be an <S7_object>, not a <NULL>` no `ggplot2` rodando via `shinylive`, que impedia a renderizacao dos graficos mesmo com as tabelas carregadas.
-- Revisada a estrategia dos graficos do preview local:
-  - removida a abordagem anterior baseada em adicionar listas de camadas ao `ggplot`;
-  - adotada montagem explicita do objeto `plot`, com inclusao condicional das camadas opcionais apenas quando elas existem.
-- Isso evita inserir `NULL` ou estruturas intermediarias no operador `+` do `ggplot2`/`S7`, reduzindo o risco de erro no runtime WebAssembly.
-- Comparado `painel/painel.qmd` da branch de reforma com `origin/main` sem alterar a branch principal.
-- Revertida, na branch de reforma, a parte dos graficos para ficar o mais proxima possivel da versao funcional da `main`.
-- Mantidas apenas as adaptacoes necessarias ao preview local:
-  - `embed-resources: false`;
-  - `BASE_URL = "../data"`;
-  - link `../metodologia.html`;
-  - notificacao de erro para carga dos CSVs;
-  - `library(S7)` para empacotamento no `shinylive`;
-  - coluna `horizonte` restrita ao fluxo das tabelas.
-- A faixa visual do horizonte exploratorio e os helpers extras dos graficos foram retirados temporariamente desta branch para isolar a regressao sem tocar na `main`.
-- Como o erro `object must be an <S7_object>, not a <NULL>` persistiu mesmo apos aproximar o baseline da `main`, foi aplicada uma correcao minima apenas nos dois pontos em que ainda havia adicao condicional de camada no `ggplot`.
-- Criada `camada_base_100()` para retornar sempre um objeto valido (`geom_hline()` ou `geom_blank()`), evitando que o preview local do `shinylive` receba `NULL` ao compor os graficos de serie historica e comparativo.
-- Iniciado o isolamento da regressao possivelmente introduzida no Bloco 3 da reforma.
-- Nesta etapa, `painel/painel.qmd` foi novamente aproximado do comportamento da `main`, preservando apenas o necessario para preview local.
-- Removidos do painel desta branch:
-  - aviso lateral sobre horizonte operacional/exploratorio;
-  - uso de `horizonte` no fluxo reativo principal de `dados_serie()`.
-- A coluna `horizonte` permanece disponivel apenas nas tabelas exportadas, sem interferir no fluxo dos graficos enquanto a regressao e isolada.
-- Adicionada instrumentacao de diagnostico nos `renderPlot()` do painel.
-- Cada grafico agora captura erros localmente, emite `showNotification()` com o nome do plot que falhou e renderiza um placeholder com a mensagem exata.
-- Isso transforma o erro generico do `shinylive` em diagnostico acionavel por aba (`plot_serie`, `plot_macro`, `plot_ativ`, `plot_comp`), permitindo localizar a regressao real sem tocar na `main`.
-- O diagnostico mostrou que os quatro plots falham com a mesma mensagem: ``object` must be an <S7_object>, not a <NULL>``.
-- Aplicada correcao comum aos quatro graficos em `painel/painel.qmd`:
-  - substituidos `name = NULL` nas escalas por `name = ""`;
-  - substituidos `x = NULL` nos `labs()` por `x = ""`.
-- Isso remove `NULL` do caminho compartilhado de montagem dos objetos `ggplot`, para testar se a incompatibilidade esta no tratamento de `NULL` pelo `ggplot2`/`S7` do `shinylive`.
-- Como o erro persistiu, iniciado teste de diagnostico estrutural no `plot_serie`.
-- O grafico da aba inicial foi reduzido temporariamente ao menor `ggplot` possivel com os proprios dados (`geom_line` + `geom_point`, sem ribbon, escalas manuais, `labs()` ou `theme` customizado).
-- Objetivo: verificar se a falha esta na montagem do grafico original ou no runtime do `ggplot2`/`shinylive` em si.
-- Como o erro persistiu ate no `ggplot` minimo, foi criada uma rota alternativa de preview local fora do `shinylive`.
-- Criado `preview_painel_local.R`, que:
-  - extrai o bloco `shinylive-r` de `painel/painel.qmd`;
-  - ajusta os caminhos para `data/` e `metodologia.html` no modo local;
-  - monta o app em memoria e executa com `shiny::runApp()`.
-- Atualizado `README.md` com a instrucao de uso `Rscript preview_painel_local.R` para preview local estavel em R nativo.
-- Instalado `shiny` no ambiente `renv` do projeto para viabilizar a execucao do `preview_painel_local.R`.
-- O `renv.lock` foi atualizado com as dependencias de runtime do preview nativo (`shiny`, `httpuv`, `commonmark`, `sourcetools`, `xtable` e dependencias resolvidas pelo snapshot).
-- Corrigido `preview_painel_local.R` para registrar `painel/data/` e `painel/` como recursos estaticos do Shiny via `addResourcePath()`.
-- Os caminhos do app local foram ajustados para usar `/data` e `/metodologia/metodologia.html`, evitando que o fetch dos CSVs retornasse conteudo incorreto e causasse erros como `object 'geo' not found`.
-- Confirmado no preview nativo que `library(S7)` mascara `validate` do `shiny`, o que explica a mensagem repetida ``object` must be an <S7_object>, not a <NULL>`` nos quatro graficos.
-- Corrigido `painel/painel.qmd` para usar `shiny::validate(shiny::need(...))` explicitamente em todos os `renderPlot()`.
-- Isso remove a ambiguidade entre `S7::validate` e `shiny::validate`, preservando `S7` carregado para o empacotamento do preview web.
-- Com os graficos voltando a renderizar no preview nativo, foi restaurado o `plot_serie` completo em `painel/painel.qmd`.
-- A aba de serie historica deixou de usar o `ggplot` minimo de diagnostico e voltou a exibir:
-  - historico x projetado por `tipo`;
-  - `geom_ribbon()` para o IC 95% projetado;
-  - linha-base 100 para series indice;
-  - escalas e rotulos completos.
+- o painel pode ser inspecionado localmente nesta branch sem depender do GitHub Pages e sem introduzir mudanças estruturais no arquivo `painel/painel.qmd`.

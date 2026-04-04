@@ -130,48 +130,6 @@ As séries de volume e deflator são apresentadas como índices com **base 100 =
 source("R/run_all.R")
 ```
 
-### Preview local do painel
-
-Para visualizar o painel localmente com os CSVs mais recentes de `painel/data/`, use:
-
-```bash
-quarto preview painel/painel.qmd
-```
-
-Ou, no Windows, use o atalho do projeto:
-
-```powershell
-.\preview_painel.ps1
-```
-
-Ou, se preferir via R:
-
-```bash
-Rscript preview_painel.R
-```
-
-Se o preview via `shinylive` apresentar incompatibilidades no navegador local, use o modo de preview em R nativo:
-
-```bash
-Rscript preview_painel_local.R
-```
-
-Se quiser apenas gerar o HTML localmente, sem abrir servidor de preview:
-
-```bash
-quarto render painel/painel.qmd
-```
-
-Ou:
-
-```powershell
-.\render_painel.ps1
-```
-
-No modo local, o painel passa a ler os arquivos versionados em `painel/data/`, sem depender do GitHub Pages.
-
-Se o preview for aberto a partir de `painel/`, o arquivo `painel/.Rprofile` garante que o Quarto use o mesmo ambiente `renv` do projeto.
-
 ### Etapas individuais
 
 ```r
@@ -194,6 +152,22 @@ git add painel/data/
 git commit -m "Atualiza dados do painel"
 git push origin main
 ```
+
+### Preview local mínimo do painel
+
+Sem alterar `painel/painel.qmd`, é possível abrir um preview local nativo do app com:
+
+```powershell
+.\preview_painel_local.ps1
+```
+
+Ou, se preferir chamar o R diretamente:
+
+```powershell
+& "C:\Program Files\R\R-4.4.0\bin\Rscript.exe" .\preview_painel_local.R
+```
+
+Esse helper reaproveita o bloco `shinylive-r` de `painel/painel.qmd`, mas serve `painel/data/` e `painel/metodologia.html` localmente via `shiny`, sem modificar o arquivo do painel.
 
 ---
 

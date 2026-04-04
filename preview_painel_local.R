@@ -24,8 +24,19 @@ if (length(fim_rel) < 1L) {
 fim <- ini + fim_rel[1L]
 codigo <- linhas[(ini + 1L):(fim - 1L)]
 
-codigo <- sub('BASE_URL <- "\\.\\./data"', 'BASE_URL <- "/data"', codigo)
-codigo <- sub('href = "\\.\\./metodologia\\.html"', 'href = "/metodologia/metodologia.html"', codigo)
+# Mantem o painel.qmd intacto e adapta os caminhos apenas no preview local.
+codigo <- sub(
+  'BASE_URL <- "https://yuricesarsilva.github.io/painel_projecao_pib_estados/data"',
+  'BASE_URL <- "/data"',
+  codigo,
+  fixed = TRUE
+)
+codigo <- sub(
+  'href = "https://yuricesarsilva.github.io/painel_projecao_pib_estados/metodologia.html"',
+  'href = "/metodologia/metodologia.html"',
+  codigo,
+  fixed = TRUE
+)
 codigo <- sub('shinyApp\\(ui, server\\)\\s*$', 'app <- shinyApp(ui, server)', codigo)
 
 app_file <- tempfile("painel_local_", fileext = ".R")
@@ -35,13 +46,11 @@ dir_antigo <- getwd()
 on.exit(setwd(dir_antigo), add = TRUE)
 setwd(painel_dir)
 
-recursos <- shiny::resourcePaths()
-
-if (!"data" %in% names(recursos)) {
+if (!"data" %in% names(shiny::resourcePaths())) {
   shiny::addResourcePath("data", file.path(painel_dir, "data"))
 }
 
-if (!"metodologia" %in% names(recursos)) {
+if (!"metodologia" %in% names(shiny::resourcePaths())) {
   shiny::addResourcePath("metodologia", painel_dir)
 }
 
