@@ -646,3 +646,6 @@ O diretório `_extensions/` gerado deve ser commitado junto com o painel.
   - substituidos `name = NULL` nas escalas por `name = ""`;
   - substituidos `x = NULL` nos `labs()` por `x = ""`.
 - Isso remove `NULL` do caminho compartilhado de montagem dos objetos `ggplot`, para testar se a incompatibilidade esta no tratamento de `NULL` pelo `ggplot2`/`S7` do `shinylive`.
+- Como o erro persistiu, iniciado teste de diagnostico estrutural no `plot_serie`.
+- O grafico da aba inicial foi reduzido temporariamente ao menor `ggplot` possivel com os proprios dados (`geom_line` + `geom_point`, sem ribbon, escalas manuais, `labs()` ou `theme` customizado).
+- Objetivo: verificar se a falha esta na montagem do grafico original ou no runtime do `ggplot2`/`shinylive` em si.
