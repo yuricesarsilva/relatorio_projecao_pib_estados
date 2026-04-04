@@ -2,6 +2,8 @@ $ErrorActionPreference = "Stop"
 
 $projeto = Split-Path -Parent $MyInvocation.MyCommand.Path
 $quarto = "C:\Program Files\RStudio\resources\app\bin\quarto\bin\quarto.exe"
+$rHome = "C:\Program Files\R\R-4.4.0"
+$rBin = Join-Path $rHome "bin"
 $rprofile = Join-Path $projeto ".Rprofile"
 $renvProject = $projeto
 $renvLib = Join-Path $projeto "renv\library\windows\R-4.4\x86_64-w64-mingw32"
@@ -14,7 +16,9 @@ if (-not (Test-Path $rprofile)) {
   throw ".Rprofile nao encontrado em '$rprofile'."
 }
 
+$env:R_HOME = $rHome
 $env:RENV_PROJECT = $renvProject
 $env:R_PROFILE_USER = $rprofile
 $env:R_LIBS_USER = $renvLib
+$env:PATH = "$rBin;$env:PATH"
 & $quarto render "painel/painel.qmd"

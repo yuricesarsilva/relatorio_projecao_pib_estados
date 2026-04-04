@@ -592,3 +592,7 @@ O diretório `_extensions/` gerado deve ser commitado junto com o painel.
 
 **Correcao do script R de preview:**
 - Ajustado `preview_painel.R` para definir as variaveis de ambiente com `Sys.setenv()` antes do `system2()`, em vez de usar o argumento `env`, que no Windows acabou sendo interpretado como argumento do Quarto.
+
+**Correcao adicional do ambiente do Quarto:**
+- Ajustados `preview_painel.R`, `preview_painel.ps1` e `render_painel.ps1` para forcar tambem `R_HOME` e o `PATH` do R 4.4.0.
+- Isso aumenta a chance de o Quarto chamar o mesmo `Rscript` que enxerga o `shinylive` instalado no projeto.
