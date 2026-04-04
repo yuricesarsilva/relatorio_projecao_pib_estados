@@ -608,3 +608,4 @@ O diretório `_extensions/` gerado deve ser commitado junto com o painel.
 **Correcao de dependencias do preview:**
 - Instalado `DT` no ambiente `renv` do projeto para atender a dependencia usada por `painel/painel.qmd`.
 - O lockfile permaneceu atualizado apos a instalacao.
+- Instalado `S7` no ambiente `renv` do projeto para atender a dependencia exigida por `ggplot2` no runtime do `shinylive`.
