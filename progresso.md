@@ -662,3 +662,9 @@ O diretório `_extensions/` gerado deve ser commitado junto com o painel.
 - Confirmado no preview nativo que `library(S7)` mascara `validate` do `shiny`, o que explica a mensagem repetida ``object` must be an <S7_object>, not a <NULL>`` nos quatro graficos.
 - Corrigido `painel/painel.qmd` para usar `shiny::validate(shiny::need(...))` explicitamente em todos os `renderPlot()`.
 - Isso remove a ambiguidade entre `S7::validate` e `shiny::validate`, preservando `S7` carregado para o empacotamento do preview web.
+- Com os graficos voltando a renderizar no preview nativo, foi restaurado o `plot_serie` completo em `painel/painel.qmd`.
+- A aba de serie historica deixou de usar o `ggplot` minimo de diagnostico e voltou a exibir:
+  - historico x projetado por `tipo`;
+  - `geom_ribbon()` para o IC 95% projetado;
+  - linha-base 100 para series indice;
+  - escalas e rotulos completos.
