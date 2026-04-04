@@ -84,6 +84,9 @@
 
 ### Diagnóstico analítico
 
+- [x] Permitir preview local do painel com dados de `painel/data`
+- [x] Garantir que o Quarto em `painel/` use o `renv` do projeto
+- [x] Criar scripts locais para preview e render do painel
 - [ ] Exportar CSV de diagnóstico dos modelos
 - [ ] Incluir modelo vencedor no diagnóstico
 - [ ] Incluir métricas principais no diagnóstico

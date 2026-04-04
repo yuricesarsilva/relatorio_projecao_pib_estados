@@ -553,3 +553,34 @@ O diretório `_extensions/` gerado deve ser commitado junto com o painel.
 - [x] `R/04_reconciliacao.R` — garantir restrições de agregação nas projeções
 - [x] `R/05_output.R` — gerar tabelas e gráficos de resultado
 - [x] `run_all.R` — orquestrador do pipeline completo
+---
+
+## Etapa 15 â€” Preview local do painel com dados versionados
+
+**O que foi feito:**
+- Ajustado `painel/painel.qmd` para usar caminho relativo (`data`) na carga dos CSVs do painel.
+- Ajustado o link da nota metodolÃ³gica no painel para `metodologia.html`, permitindo navegaÃ§Ã£o local sem depender do GitHub Pages.
+- Atualizado `README.md` com instruÃ§Ãµes de preview local via `quarto preview painel/painel.qmd` e renderizaÃ§Ã£o local via `quarto render painel/painel.qmd`.
+- Atualizado `checklist_reforma.md`, marcando como concluÃ­do o suporte a preview local do painel com dados de `painel/data/`.
+
+**Resultado prÃ¡tico:**
+- O painel local deixa de buscar os CSVs publicados em `github.io` e passa a usar os dados atuais presentes em `painel/data/`.
+- Isso permite revisar mudanÃ§as visuais e tambÃ©m os dados locais antes do deploy no GitHub Pages.
+
+**Arquivos modificados:** `painel/painel.qmd`, `README.md`, `checklist_reforma.md`
+---
+
+## Etapa 16 — Ajuste do ambiente do preview local
+
+**O que foi feito:**
+- Instalado `shinylive` no ambiente `renv` do projeto e atualizado `renv.lock`.
+- Criado `painel/.Rprofile` para ativar `../renv/activate.R` quando o Quarto renderiza a partir de `painel/`.
+- Atualizado `README.md` e `checklist_reforma.md` para refletir esse ajuste operacional.
+
+**Resultado prático:**
+- O preview local do painel passa a usar o mesmo ambiente do projeto, mesmo quando a renderização parte do diretório `painel/`.
+
+**Ajuste complementar:**
+- Criados `preview_painel.ps1` e `render_painel.ps1` para abrir preview e renderizar o painel usando automaticamente o `.Rprofile` da raiz do projeto.
+
+**Arquivos modificados:** `renv.lock`, `painel/.Rprofile`, `README.md`, `checklist_reforma.md`, `preview_painel.ps1`, `render_painel.ps1`

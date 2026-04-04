@@ -130,6 +130,36 @@ As séries de volume e deflator são apresentadas como índices com **base 100 =
 source("R/run_all.R")
 ```
 
+### Preview local do painel
+
+Para visualizar o painel localmente com os CSVs mais recentes de `painel/data/`, use:
+
+```bash
+quarto preview painel/painel.qmd
+```
+
+Ou, no Windows, use o atalho do projeto:
+
+```powershell
+.\preview_painel.ps1
+```
+
+Se quiser apenas gerar o HTML localmente, sem abrir servidor de preview:
+
+```bash
+quarto render painel/painel.qmd
+```
+
+Ou:
+
+```powershell
+.\render_painel.ps1
+```
+
+No modo local, o painel passa a ler os arquivos versionados em `painel/data/`, sem depender do GitHub Pages.
+
+Se o preview for aberto a partir de `painel/`, o arquivo `painel/.Rprofile` garante que o Quarto use o mesmo ambiente `renv` do projeto.
+
 ### Etapas individuais
 
 ```r
