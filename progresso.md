@@ -575,3 +575,24 @@ O diretório `_extensions/` gerado deve ser commitado junto com o painel.
 
 **Resultado prático:**
 - o painel pode ser inspecionado localmente nesta branch sem depender do GitHub Pages e sem introduzir mudanças estruturais no arquivo `painel/painel.qmd`.
+
+---
+
+## Etapa 16 — Limpeza dos avisos visuais temporários do preview
+
+**Objetivo:**
+- remover as telas vermelhas de diagnóstico que ficaram no `painel.qmd` após os testes do preview.
+
+**O que foi feito:**
+- removida a função temporária `render_plot_erro()` do `painel/painel.qmd`;
+- restaurado o fluxo normal de `renderPlot()` nas quatro áreas gráficas:
+  - `plot_serie`
+  - `plot_macro`
+  - `plot_ativ`
+  - `plot_comp`
+- mantida apenas a notificação legível de falha de carregamento dos CSVs (`data_load_error`), que continua útil no preview local.
+
+**Arquivos modificados:** `painel/painel.qmd`
+
+**Resultado prático:**
+- o preview local deixa de exibir os placeholders vermelhos usados no diagnóstico anterior e volta a mostrar apenas o comportamento normal do painel.

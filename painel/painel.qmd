@@ -372,19 +372,6 @@ ui <- page_sidebar(
 
 server <- function(input, output, session) {
 
-  render_plot_erro <- function(nome_plot, expr) {
-    tryCatch(
-      expr,
-      error = function(e) {
-        mensagem <- paste0(nome_plot, ": ", conditionMessage(e))
-        showNotification(mensagem, type = "error", duration = NULL)
-        plot.new()
-        text(0.5, 0.58, nome_plot, cex = 1.1, font = 2)
-        text(0.5, 0.44, conditionMessage(e), cex = 0.9)
-      }
-    )
-  }
-
   observeEvent(input$data_load_error, {
     showNotification(
       paste("Falha ao carregar os dados do painel:", input$data_load_error),
@@ -434,7 +421,6 @@ server <- function(input, output, session) {
   })
 
   output$plot_serie <- renderPlot({
-    render_plot_erro("plot_serie", {
       df <- dados_serie()
 
       shiny::validate(shiny::need(nrow(df) > 0, "Sem dados para a combinação selecionada."))
@@ -463,12 +449,10 @@ server <- function(input, output, session) {
              x = "", y = unidade,
              caption = "Fonte: IBGE (histórico); projeção própria (2024–2031).") +
         tema_base
-    })
   })
 
   # ---- Aba 2: VAB Macrossetor -----------------------------------------------
   output$plot_macro <- renderPlot({
-    render_plot_erro("plot_macro", {
       df <- vab_mac() |>
         filter(geo == input$geo, ano <= ano_max()) |>
         mutate(
@@ -516,12 +500,10 @@ server <- function(input, output, session) {
                caption = "Fonte: IBGE (histórico); projeção própria.") +
           tema_base
       }
-    })
   })
 
   # ---- Aba 3: VAB Atividade -------------------------------------------------
   output$plot_ativ <- renderPlot({
-    render_plot_erro("plot_ativ", {
       df <- vab_ativ() |>
         filter(geo == input$geo, ano <= ano_max()) |>
         mutate(
@@ -570,7 +552,6 @@ server <- function(input, output, session) {
                caption = "Fonte: IBGE (histórico); projeção própria.") +
           tema_base
       }
-    })
   })
 
   # ---- Aba 4: Comparativo ---------------------------------------------------
@@ -579,7 +560,6 @@ server <- function(input, output, session) {
   })
 
   output$plot_comp <- renderPlot({
-    render_plot_erro("plot_comp", {
       shiny::validate(shiny::need(length(input$geos_comp) >= 1, "Selecione ao menos um território."))
       df <- serie() |>
         filter(geo %in% input$geos_comp, variavel == input$variavel,
@@ -610,7 +590,6 @@ server <- function(input, output, session) {
              x = "", y = unidade,
              caption = "Fonte: IBGE (histórico); projeção própria.") +
         tema_base
-    })
   })
 
   # ---- Aba 5: Tabela --------------------------------------------------------
