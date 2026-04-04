@@ -121,17 +121,34 @@ eh_indice <- function(var) var %in% c("idx_vol_pib", "idx_deflator")
 
 camada_exploratoria <- function(ano_limite) {
   if (ano_limite < ANO_EXPLORATORIO_INI) {
-    return(NULL)
+    return(list())
   }
 
-  annotate(
-    "rect",
-    xmin = ANO_EXPLORATORIO_INI - 0.5,
-    xmax = ano_limite + 0.5,
-    ymin = -Inf,
-    ymax = Inf,
-    fill = "#7f8c8d",
-    alpha = 0.08
+  list(
+    annotate(
+      "rect",
+      xmin = ANO_EXPLORATORIO_INI - 0.5,
+      xmax = ano_limite + 0.5,
+      ymin = -Inf,
+      ymax = Inf,
+      fill = "#7f8c8d",
+      alpha = 0.08
+    )
+  )
+}
+
+camada_base_100 <- function(var) {
+  if (!eh_indice(var)) {
+    return(list())
+  }
+
+  list(
+    geom_hline(
+      yintercept = 100,
+      colour = "grey70",
+      linewidth = 0.3,
+      linetype = "dotted"
+    )
   )
 }
 
@@ -459,9 +476,7 @@ server <- function(input, output, session) {
         fill = COR_RIBBN, alpha = 0.20
       ) +
       vl +
-      { if (eh_indice(input$variavel))
-          geom_hline(yintercept = 100, colour = "grey70",
-                     linewidth = 0.3, linetype = "dotted") } +
+      camada_base_100(input$variavel) +
       geom_line(aes(y = valor, colour = tipo), linewidth = 1.1) +
       geom_point(aes(y = valor, colour = tipo), size = 2.0) +
       scale_colour_manual(
@@ -602,9 +617,7 @@ server <- function(input, output, session) {
     ggplot(df, aes(x = ano, y = valor, colour = geo, linetype = tipo)) +
       camada_exploratoria(ano_max()) +
       vl +
-      { if (eh_indice(input$variavel))
-          geom_hline(yintercept = 100, colour = "grey70",
-                     linewidth = 0.3, linetype = "dotted") } +
+      camada_base_100(input$variavel) +
       geom_line(linewidth = 0.9) +
       scale_linetype_manual(values = c(Histórico = "solid", Projetado = "dashed"), name = NULL) +
       scale_colour_brewer(palette = "Set2", name = NULL) +

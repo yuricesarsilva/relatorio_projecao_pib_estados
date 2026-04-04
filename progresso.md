@@ -614,3 +614,5 @@ O diretório `_extensions/` gerado deve ser commitado junto com o painel.
 - Ajustados os caminhos do preview local de `data` para `../data` e de `metodologia.html` para `../metodologia.html`.
 - Isso corrige a resolucao de recursos quando o app `shinylive` roda dentro da rota `app_*`, evitando que os fetchs dos CSVs apontem para um caminho inexistente.
 - Adicionado `showNotification()` no server para exibir a causa textual quando a carga dos CSVs falhar no navegador, substituindo mensagens opacas como `[object Object]`.
+- Ajustadas as camadas opcionais dos graficos em `painel/painel.qmd` para retornarem listas vazias em vez de `NULL`.
+- Isso corrige o erro `object must be an <S7_object>, not a <NULL>` no `ggplot2` rodando via `shinylive`, que impedia a renderizacao dos graficos mesmo com as tabelas carregadas.
