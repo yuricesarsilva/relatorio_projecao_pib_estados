@@ -15,6 +15,8 @@ Projeções do PIB nominal, VAB por macrossetor e atividade, impostos, deflator 
 
 O painel permite visualizar:
 - Séries históricas (2002–2023) e projeções (2024–2031) com intervalo de confiança de 95%
+- Destaque analítico para `2024–2027` como **horizonte operacional**
+- Tratamento de `2028–2031` como **horizonte exploratório**, com maior cautela interpretativa
 - PIB nominal, VAB total, impostos, PIB real acumulado e deflator implícito acumulado (índices base 100 = 2002)
 - VAB desagregado por macrossetor (agropecuária, indústria, serviços, administração pública)
 - VAB desagregado por atividade econômica (12 atividades)
@@ -57,6 +59,8 @@ O painel permite visualizar:
 
 - **Fonte:** IBGE — Contas Regionais do Brasil
 - **Período histórico:** 2002–2023 (22 observações anuais)
+- **Horizonte operacional recomendado:** 2024–2027
+- **Horizonte exploratório:** 2028–2031
 - **Cobertura:** 27 UFs, 5 regiões geográficas e Brasil (33 territórios)
 - **Variáveis modeladas:** índices de volume e preço por atividade/macrossetor, log dos impostos
 
@@ -78,6 +82,12 @@ Para cada série temporal (~1.089 no total), o script `03_projecao.R` seleciona 
 | `SSM` | Modelo de espaço de estados | Filtro de Kalman (local linear trend) |
 
 A seleção usa o menor **MASE** (*Mean Absolute Scaled Error*) no período de validação (2017–2023).
+
+### Interpretação do Horizonte
+
+- `2024–2027`: horizonte principal para leitura operacional e comparação pública.
+- `2028–2031`: horizonte exploratório, mantido para referência técnica, mas com maior fragilidade interpretativa.
+- O painel sinaliza visualmente o trecho exploratório para reduzir leitura excessivamente precisa dos anos mais distantes.
 
 ### Séries Projetadas
 

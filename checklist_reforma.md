@@ -43,14 +43,14 @@
 
 ## Bloco 3 - QA e governança analítica
 
-- [ ] Tornar `R/02_consistencia.R` uma barreira de execução
-- [ ] Classificar checagens em erro fatal e warning monitorado
-- [ ] Fazer `R/run_all.R` interromper o pipeline quando o QA falhar
-- [ ] Definir horizonte operacional
-- [ ] Definir horizonte exploratório
-- [ ] Refletir essa distinção no README
-- [ ] Refletir essa distinção na metodologia
-- [ ] Refletir essa distinção no painel
+- [x] Tornar `R/02_consistencia.R` uma barreira de execução
+- [x] Classificar checagens em erro fatal e warning monitorado
+- [x] Fazer `R/run_all.R` interromper o pipeline quando o QA falhar
+- [x] Definir horizonte operacional
+- [x] Definir horizonte exploratório
+- [x] Refletir essa distinção no README
+- [x] Refletir essa distinção na metodologia
+- [x] Refletir essa distinção no painel
 
 ---
 
@@ -120,6 +120,6 @@
 
 - [x] Bloco 1 concluído
 - [x] Bloco 2 concluído
-- [ ] Bloco 3 concluído
+- [x] Bloco 3 concluído
 - [ ] Bloco 4 concluído
 - [ ] Bloco 5 concluído

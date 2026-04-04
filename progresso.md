@@ -477,6 +477,67 @@ O diretório `_extensions/` gerado deve ser commitado junto com o painel.
 
 ---
 
+## Etapa 14 â€” Bloco 3 da reforma: QA bloqueante e governanÃ§a do horizonte
+
+**O que foi feito:**
+- Reformulado `R/02_consistencia.R` para gerar um objeto `qa_status` com:
+  - tabela de checagens;
+  - desvio mÃ¡ximo por regra;
+  - tolerÃ¢ncia por regra;
+  - severidade (`fatal` ou `warning`);
+  - status final `ok`.
+- Classificadas como **fatais** as checagens de:
+  - identidade `PIB = VAB + impostos`;
+  - agregaÃ§Ã£o estados = regiÃ£o;
+  - agregaÃ§Ã£o regiÃµes = Brasil.
+- Mantidas como **warnings monitorados**:
+  - soma das atividades = VAB total;
+  - consistÃªncia dos impostos SIDRA.
+- Ajustadas as tolerÃ¢ncias em `R/config.R` para evitar bloqueio por ruÃ­do numÃ©rico microscÃ³pico.
+- Atualizado `R/run_all.R` para interromper o pipeline automaticamente quando `qa_status$ok == FALSE` apÃ³s `R/02_consistencia.R`.
+
+**GovernanÃ§a do horizonte:**
+- Definidos em `R/config.R`:
+  - `ANO_OPERACIONAL_FIM = 2027`
+  - `ANO_EXPLORATORIO_INI = 2028`
+- Atualizado `R/06_exportar_painel.R` para exportar a coluna `horizonte` nos trÃªs CSVs do painel, com os valores:
+  - `HistÃ³rico`
+  - `Operacional`
+  - `ExploratÃ³rio`
+- Regenerados os CSVs versionados de `painel/data/`.
+
+**AtualizaÃ§Ãµes de comunicaÃ§Ã£o:**
+- `README.md`
+  - passou a explicitar `2024â€“2027` como horizonte operacional e `2028â€“2031` como horizonte exploratÃ³rio.
+- `painel/metodologia.html`
+  - passou a reforÃ§ar essa distinÃ§Ã£o na seÃ§Ã£o de projeÃ§Ã£o, interpretaÃ§Ã£o e limitaÃ§Ãµes.
+- `painel/painel.qmd`
+  - passou a destacar visualmente o trecho exploratÃ³rio com faixa cinza;
+  - adicionou aviso lateral sobre leitura recomendada do horizonte;
+  - incluiu a informaÃ§Ã£o de horizonte na tabela;
+  - ajustou subtÃ­tulos e captions para reforÃ§ar a diferenÃ§a entre leitura operacional e exploratÃ³ria.
+
+**ValidaÃ§Ãµes realizadas:**
+- `parse()` dos scripts centrais do Bloco 3 â€” `parse_ok`.
+- ExecuÃ§Ã£o real de `R/02_consistencia.R` com `qa_status[['ok']] == TRUE`.
+- ExecuÃ§Ã£o real de `R/06_exportar_painel.R` com exportaÃ§Ã£o concluÃ­da.
+- ConfirmaÃ§Ã£o das colunas `horizonte` em:
+  - `painel/data/serie_principal.csv`
+  - `painel/data/vab_macrossetor.csv`
+  - `painel/data/vab_atividade.csv`
+
+**Arquivos modificados:** `R/config.R`, `R/02_consistencia.R`, `R/run_all.R`, `R/06_exportar_painel.R`, `painel/painel.qmd`, `painel/metodologia.html`, `README.md`, `checklist_reforma.md`
+
+**Outputs atualizados:**
+
+| Arquivo | Linhas | ObservaÃ§Ã£o |
+|---------|--------|------------|
+| `painel/data/serie_principal.csv` | 4.950 | coluna `horizonte` adicionada |
+| `painel/data/vab_macrossetor.csv` | 3.960 | coluna `horizonte` adicionada |
+| `painel/data/vab_atividade.csv` | 11.880 | coluna `horizonte` adicionada |
+
+---
+
 ## Pipeline completo (`run_all.R`)
 
 - Criado `run_all.R` para execução sequencial dos 5 scripts com tratamento de erros e cronometragem por etapa.

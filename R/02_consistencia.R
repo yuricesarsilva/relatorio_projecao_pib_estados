@@ -27,6 +27,10 @@ library(tidyverse)
 # Carrega dados
 # ==============================================================================
 
+if (exists("registrar_evento_log", mode = "function")) {
+  registrar_evento_log("02_consistencia", "INFO", "Iniciando checagens de consistencia")
+}
+
 esp <- readRDS("dados/especiais.rds")
 
 # Pivot para wide: uma coluna por variável principal
@@ -72,6 +76,8 @@ if (nrow(grandes_desvios1) > 0) {
 } else {
   cat("\nNenhum caso com |desvio| > 1%. Identidade satisfeita.\n")
 }
+
+max_desvio_check1 <- max(abs(check1$desvio_rel), na.rm = TRUE)
 
 # ==============================================================================
 # Checagem 2 — Soma dos estados = PIB da região
@@ -119,6 +125,8 @@ if (nrow(grandes_desvios2) > 0) {
   cat("\nNenhum caso com |desvio| > 1%. Agregação regional satisfeita.\n")
 }
 
+max_desvio_check2 <- max(abs(check2$desvio_rel), na.rm = TRUE)
+
 # ==============================================================================
 # Checagem 3 — Soma das regiões = PIB Brasil
 # ==============================================================================
@@ -147,6 +155,8 @@ if (all(abs(check3$desvio_rel) < 1, na.rm = TRUE)) {
 } else {
   cat("\nATENÇÃO: desvios acima de 1% encontrados.\n")
 }
+
+max_desvio_check3 <- max(abs(check3$desvio_rel), na.rm = TRUE)
 
 # ==============================================================================
 # Checagem 4 — VAB: soma das atividades = VAB total (Conta da Produção)
@@ -195,6 +205,8 @@ if (nrow(grandes_desvios4) > 0) {
 } else {
   cat("\nNenhum caso com |desvio| > 1%. Soma das atividades satisfeita.\n")
 }
+
+max_desvio_check4 <- max(abs(check4$desvio_rel), na.rm = TRUE)
 
 # ==============================================================================
 # Checagem 5 — Impostos: consistência e detecção de anos imputados
@@ -259,6 +271,65 @@ if (nrow(sidra_check) > 0) {
   cat("Todos os anos foram imputados (sem dados SIDRA para comparação).\n")
 }
 
+max_desvio_check5 <- if (nrow(sidra_check) > 0) {
+  max(abs(sidra_check$desvio_rel), na.rm = TRUE)
+} else {
+  0
+}
+
+# ==============================================================================
+# Status de QA
+# ==============================================================================
+
+qa_checks <- tibble(
+  check = c(
+    "identidade_pib",
+    "agregacao_regional",
+    "agregacao_nacional",
+    "vab_atividades",
+    "impostos_sidra"
+  ),
+  max_desvio_pct = c(
+    max_desvio_check1,
+    max_desvio_check2,
+    max_desvio_check3,
+    max_desvio_check4,
+    max_desvio_check5
+  ),
+  tolerancia_pct = c(
+    TOL_IDENTIDADE_PIB,
+    TOL_RECONCILIACAO,
+    TOL_RECONCILIACAO,
+    TOL_VAB_ATIVIDADES,
+    TOL_IMPOSTOS_SIDRA
+  ),
+  severidade = c("fatal", "fatal", "fatal", "warning", "warning")
+) |>
+  mutate(ok = max_desvio_pct <= tolerancia_pct)
+
+qa_status <- list(
+  ok = !any(!qa_checks$ok & qa_checks$severidade == "fatal", na.rm = TRUE),
+  checks = qa_checks,
+  warnings = qa_checks |> filter(!ok, severidade == "warning"),
+  erros_fatais = qa_checks |> filter(!ok, severidade == "fatal")
+)
+
+cat("\n=== Status de QA ===\n")
+print(qa_checks)
+
+if (exists("registrar_evento_log", mode = "function")) {
+  registrar_evento_log(
+    "02_consistencia",
+    if (qa_status$ok) "INFO" else "ERROR",
+    "Resultado das checagens de consistencia",
+    paste(
+      "qa_ok =", qa_status$ok,
+      "| checks_fatais_com_erro =", nrow(qa_status$erros_fatais),
+      "| checks_warning =", nrow(qa_status$warnings)
+    )
+  )
+}
+
 # ==============================================================================
 # Salvar resultado das checagens
 # ==============================================================================
@@ -270,7 +341,8 @@ saveRDS(
     agregacao_regional      = check2,
     agregacao_nacional      = check3,
     vab_atividades          = check4,
-    impostos_consistencia   = check5
+    impostos_consistencia   = check5,
+    qa_status               = qa_status
   ),
   "dados/consistencia.rds"
 )

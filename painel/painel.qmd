@@ -37,6 +37,8 @@ library(scales)
 
 ANO_HIST_FIM <- 2023L
 ANO_PROJ_FIM <- 2031L
+ANO_OPERACIONAL_FIM <- 2027L
+ANO_EXPLORATORIO_INI <- 2028L
 
 GEO_ORDER <- c(
   "Brasil",
@@ -114,6 +116,33 @@ vl <- geom_vline(xintercept = ANO_HIST_FIM + 0.5,
                  linetype = "dashed", colour = "grey55", linewidth = 0.4)
 
 eh_indice <- function(var) var %in% c("idx_vol_pib", "idx_deflator")
+
+camada_exploratoria <- function(ano_limite) {
+  if (ano_limite < ANO_EXPLORATORIO_INI) {
+    return(NULL)
+  }
+
+  annotate(
+    "rect",
+    xmin = ANO_EXPLORATORIO_INI - 0.5,
+    xmax = ano_limite + 0.5,
+    ymin = -Inf,
+    ymax = Inf,
+    fill = "#7f8c8d",
+    alpha = 0.08
+  )
+}
+
+nota_horizonte <- function(ano_limite = ANO_PROJ_FIM) {
+  if (ano_limite < ANO_EXPLORATORIO_INI) {
+    return(paste0("Horizonte operacional: 2024–", ano_limite, "."))
+  }
+
+  paste0(
+    "Horizonte operacional: 2024–", ANO_OPERACIONAL_FIM,
+    "; horizonte exploratório: ", ANO_EXPLORATORIO_INI, "–", ano_limite, "."
+  )
+}
 
 formato_y <- function(var) {
   if (eh_indice(var))
@@ -280,6 +309,11 @@ ui <- page_sidebar(
       )
     ),
     tags$div(
+      style = "margin-top: 18px; padding: 10px 12px; background: #f7f7f7; border-left: 3px solid #7f8c8d; font-size: 0.82em; line-height: 1.45; color: #333;",
+      tags$strong("Leitura recomendada: "),
+      "2024–2027 = horizonte operacional; 2028–2031 = horizonte exploratório, com maior incerteza interpretativa."
+    ),
+    tags$div(
       style = "margin-top: 24px; padding-top: 14px; border-top: 1px solid #e0e0e0; text-align: center;",
       tags$a(
         href = "https://yuricesarsilva.github.io/painel_projecao_pib_estados/metodologia.html", target = "_blank",
@@ -386,7 +420,10 @@ server <- function(input, output, session) {
     serie() |>
       filter(geo == input$geo, variavel == input$variavel,
              ano <= ano_max()) |>
-      mutate(tipo = factor(tipo, levels = c("Histórico", "Projetado")))
+      mutate(
+        tipo = factor(tipo, levels = c("Histórico", "Projetado")),
+        horizonte = factor(horizonte, levels = c("Histórico", "Operacional", "Exploratório"))
+      )
   })
 
   # ---- Aba 1: Série Histórica + Projeção ------------------------------------
@@ -401,9 +438,10 @@ server <- function(input, output, session) {
     unidade  <- if (eh_indice(input$variavel)) "Índice (2002 = 100)" else "R$ bilhões"
     subtitulo <- paste0("Histórico 2002–", ANO_HIST_FIM,
                         " + Projeção ", ANO_HIST_FIM + 1L, "–", ano_max(),
-                        " com IC 95%")
+                        " com IC 95% | ", nota_horizonte(ano_max()))
 
     ggplot(df, aes(x = ano)) +
+      camada_exploratoria(ano_max()) +
       geom_ribbon(
         aes(ymin = lo95, ymax = hi95),
         data = \(d) filter(d, tipo == "Projetado", !is.na(lo95)),
@@ -423,7 +461,7 @@ server <- function(input, output, session) {
       labs(title    = paste0(VARIAVEL_LABEL[input$variavel], " — ", input$geo),
            subtitle = subtitulo,
            x = NULL, y = unidade,
-           caption = "Fonte: IBGE (histórico); projeção própria (2024–2031).") +
+           caption = "Fonte: IBGE (histórico); projeção própria. Faixa cinza = horizonte exploratório.") +
       tema_base
   })
 
@@ -443,6 +481,7 @@ server <- function(input, output, session) {
 
     if (input$macrossetor == "todos") {
       ggplot(df, aes(x = ano, fill = mac_label, colour = mac_label)) +
+        camada_exploratoria(ano_max()) +
         geom_area(data = \(d) filter(d, tipo == "Histórico"),
                   aes(y = vab_nominal / 1e3), position = "stack", alpha = 0.70) +
         geom_area(data = \(d) filter(d, tipo == "Projetado"),
@@ -454,12 +493,13 @@ server <- function(input, output, session) {
         scale_y_continuous(labels = label_number(big.mark = ".", decimal.mark = ",",
                                                   accuracy = 1, suffix = " bi", scale = 1)) +
         labs(title    = paste0("VAB por Macrossetor — ", input$geo),
-             subtitle = "R$ bilhões (correntes) | empilhado; sombreado = projetado",
+             subtitle = paste0("R$ bilhões (correntes) | empilhado; sombreado = projetado | ", nota_horizonte(ano_max())),
              x = NULL, y = "R$ bilhões",
-             caption = "Fonte: IBGE (histórico); projeção própria.") +
+             caption = "Fonte: IBGE (histórico); projeção própria. Faixa cinza = horizonte exploratório.") +
         tema_base
     } else {
       ggplot(df, aes(x = ano)) +
+        camada_exploratoria(ano_max()) +
         geom_ribbon(aes(ymin = vab_lo95 / 1e3, ymax = vab_hi95 / 1e3),
                     data = \(d) filter(d, tipo == "Projetado", !is.na(vab_lo95)),
                     fill = COR_RIBBN, alpha = 0.20) +
@@ -471,9 +511,9 @@ server <- function(input, output, session) {
         scale_y_continuous(labels = label_number(big.mark = ".", decimal.mark = ",",
                                                   accuracy = 0.1, suffix = " bi")) +
         labs(title    = paste0("VAB — ", MACRO_LABEL[input$macrossetor], " — ", input$geo),
-             subtitle = "R$ bilhões (correntes) | IC 95% no período projetado",
+             subtitle = paste0("R$ bilhões (correntes) | IC 95% no período projetado | ", nota_horizonte(ano_max())),
              x = NULL, y = "R$ bilhões",
-             caption = "Fonte: IBGE (histórico); projeção própria.") +
+             caption = "Fonte: IBGE (histórico); projeção própria. Faixa cinza = horizonte exploratório.") +
         tema_base
     }
   })
@@ -494,6 +534,7 @@ server <- function(input, output, session) {
 
     if (input$atividade == "todas") {
       ggplot(df, aes(x = ano, fill = ativ_label, colour = ativ_label)) +
+        camada_exploratoria(ano_max()) +
         geom_area(data = \(d) filter(d, tipo == "Histórico"),
                   aes(y = vab_nominal / 1e3), position = "stack", alpha = 0.80) +
         geom_area(data = \(d) filter(d, tipo == "Projetado"),
@@ -505,13 +546,14 @@ server <- function(input, output, session) {
         scale_y_continuous(labels = label_number(big.mark = ".", decimal.mark = ",",
                                                   accuracy = 1, suffix = " bi", scale = 1)) +
         labs(title    = paste0("VAB por Atividade — ", input$geo),
-             subtitle = "R$ bilhões (correntes) | empilhado; sombreado = projetado",
+             subtitle = paste0("R$ bilhões (correntes) | empilhado; sombreado = projetado | ", nota_horizonte(ano_max())),
              x = NULL, y = "R$ bilhões",
-             caption = "Fonte: IBGE (histórico); projeção própria.") +
+             caption = "Fonte: IBGE (histórico); projeção própria. Faixa cinza = horizonte exploratório.") +
         tema_base +
         theme(legend.text = element_text(size = 7), legend.key.size = unit(0.4, "cm"))
     } else {
       ggplot(df, aes(x = ano)) +
+        camada_exploratoria(ano_max()) +
         geom_ribbon(aes(ymin = vab_lo95 / 1e3, ymax = vab_hi95 / 1e3),
                     data = \(d) filter(d, tipo == "Projetado", !is.na(vab_lo95)),
                     fill = COR_RIBBN, alpha = 0.20) +
@@ -523,9 +565,9 @@ server <- function(input, output, session) {
         scale_y_continuous(labels = label_number(big.mark = ".", decimal.mark = ",",
                                                   accuracy = 0.1, suffix = " bi")) +
         labs(title    = paste0("VAB — ", ATIVIDADE_LABEL[input$atividade], " — ", input$geo),
-             subtitle = "R$ bilhões (correntes) | IC 95% no período projetado",
+             subtitle = paste0("R$ bilhões (correntes) | IC 95% no período projetado | ", nota_horizonte(ano_max())),
              x = NULL, y = "R$ bilhões",
-             caption = "Fonte: IBGE (histórico); projeção própria.") +
+             caption = "Fonte: IBGE (histórico); projeção própria. Faixa cinza = horizonte exploratório.") +
         tema_base
     }
   })
@@ -547,6 +589,7 @@ server <- function(input, output, session) {
     unidade <- if (eh_indice(input$variavel)) "Índice (2002 = 100)" else "R$ bilhões"
 
     ggplot(df, aes(x = ano, y = valor, colour = geo, linetype = tipo)) +
+      camada_exploratoria(ano_max()) +
       vl +
       { if (eh_indice(input$variavel))
           geom_hline(yintercept = 100, colour = "grey70",
@@ -563,10 +606,10 @@ server <- function(input, output, session) {
       } +
       labs(title    = paste0(VARIAVEL_LABEL[input$variavel], " — Comparativo"),
            subtitle = paste0("Histórico 2002–", ANO_HIST_FIM,
-                             " (contínuo) + Projeção ", ANO_HIST_FIM + 1L, "–", ANO_PROJ_FIM,
-                             " (tracejado)"),
+                             " (contínuo) + Projeção ", ANO_HIST_FIM + 1L, "–", ano_max(),
+                             " (tracejado) | ", nota_horizonte(ano_max())),
            x = NULL, y = unidade,
-           caption = "Fonte: IBGE (histórico); projeção própria.") +
+           caption = "Fonte: IBGE (histórico); projeção própria. Faixa cinza = horizonte exploratório.") +
       tema_base
   })
 
@@ -578,7 +621,7 @@ server <- function(input, output, session) {
       serie() |>
         filter(geo == input$tabela_geo, variavel == input$tabela_var) |>
         transmute(
-          Território = geo, Tipo = tipo, Ano = ano,
+          Território = geo, Tipo = tipo, Horizonte = horizonte, Ano = ano,
           Variável   = coalesce(VARIAVEL_LABEL[variavel], variavel),
           !!lbl_valor := round(valor, 2),
           `Limite inferior (IC 95%)` = round(lo95, 2),
@@ -590,7 +633,7 @@ server <- function(input, output, session) {
       if (input$tabela_mac != "todos")
         d <- d |> filter(macrossetor == input$tabela_mac)
       d |> transmute(
-        Território  = geo, Tipo = tipo, Ano = ano,
+        Território  = geo, Tipo = tipo, Horizonte = horizonte, Ano = ano,
         Macrossetor = coalesce(MACRO_LABEL[macrossetor], macrossetor),
         `VAB Nominal (R$ milhões)` = round(vab_nominal, 1),
         `Limite inferior (IC 95%)` = round(vab_lo95, 1),
@@ -602,7 +645,7 @@ server <- function(input, output, session) {
       if (input$tabela_ativ != "todas")
         d <- d |> filter(atividade == input$tabela_ativ)
       d |> transmute(
-        Território  = geo, Tipo = tipo, Ano = ano,
+        Território  = geo, Tipo = tipo, Horizonte = horizonte, Ano = ano,
         Macrossetor = coalesce(MACRO_LABEL[macrossetor], macrossetor),
         Atividade   = coalesce(ATIVIDADE_LABEL[atividade], atividade),
         `VAB Nominal (R$ milhões)` = round(vab_nominal, 1),

@@ -104,6 +104,25 @@ for (script in scripts) {
     }
   )
 
+  if (identical(script, "R/02_consistencia.R") &&
+      exists("qa_status", envir = .GlobalEnv, inherits = FALSE)) {
+    qa_status_atual <- get("qa_status", envir = .GlobalEnv, inherits = FALSE)
+
+    if (!isTRUE(qa_status_atual$ok)) {
+      registrar_evento_log(
+        etapa = "run_all",
+        nivel = "ERROR",
+        mensagem = "QA bloqueante interrompeu o pipeline",
+        detalhe = paste(
+          qa_status_atual$erros_fatais$check,
+          collapse = ", "
+        )
+      )
+      salvar_log_execucao(status = "erro_qa")
+      stop("QA bloqueante falhou em R/02_consistencia.R. Pipeline interrompido.")
+    }
+  }
+
   elapsed <- round((proc.time() - t0)[["elapsed"]])
   registrar_evento_log(
     etapa = "run_all",

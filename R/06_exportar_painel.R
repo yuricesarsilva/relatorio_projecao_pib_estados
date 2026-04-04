@@ -20,8 +20,9 @@ library(tidyverse)
 #   vab_atividade.csv    — histórico + projetado por atividade, com IC 95%
 #
 # Estrutura comum (formato longo):
-#   geo, geo_tipo, regiao, ano, <variavel(is)>, lo95, hi95, tipo
+#   geo, geo_tipo, regiao, ano, <variavel(is)>, lo95, hi95, tipo, horizonte
 #   tipo = "Histórico" (2002–2023) ou "Projetado" (2024–2031)
+#   horizonte = "Histórico" | "Operacional" | "Exploratório"
 #   lo95/hi95 = NA no período histórico
 # ==============================================================================
 
@@ -210,6 +211,14 @@ proj_indices_ci <- proj_rec |>
 
 message("Montando serie_principal.csv...")
 
+classificar_horizonte <- function(ano, tipo) {
+  case_when(
+    tipo == "Histórico" ~ "Histórico",
+    ano <= ANO_OPERACIONAL_FIM ~ "Operacional",
+    TRUE ~ "Exploratório"
+  )
+}
+
 # Histórico: 5 variáveis em formato longo (geo_tipo/regiao já nas séries)
 hist_principal <- bind_rows(
   pib_nom_hist |>
@@ -218,33 +227,38 @@ hist_principal <- bind_rows(
               variavel = "pib_nominal",
               valor = pib_nominal,
               lo95 = NA_real_, hi95 = NA_real_,
-              tipo = "Histórico"),
+              tipo = "Histórico",
+              horizonte = classificar_horizonte(ano, "Histórico")),
   vab_nom_hist |>
     filter(ano >= ANO_HIST_INI) |>
     transmute(geo, geo_tipo, regiao, ano,
               variavel = "vab_nominal_total",
               valor = vab_nominal,
               lo95 = NA_real_, hi95 = NA_real_,
-              tipo = "Histórico"),
+              tipo = "Histórico",
+              horizonte = classificar_horizonte(ano, "Histórico")),
   imp_nom_hist |>
     filter(ano >= ANO_HIST_INI) |>
     transmute(geo, geo_tipo, regiao, ano,
               variavel = "impostos_nominal",
               valor = impostos_nominal,
               lo95 = NA_real_, hi95 = NA_real_,
-              tipo = "Histórico"),
+              tipo = "Histórico",
+              horizonte = classificar_horizonte(ano, "Histórico")),
   hist_indices |>
     transmute(geo, geo_tipo, regiao, ano,
               variavel = "idx_vol_pib",
               valor = idx_vol_pib,
               lo95 = NA_real_, hi95 = NA_real_,
-              tipo = "Histórico"),
+              tipo = "Histórico",
+              horizonte = classificar_horizonte(ano, "Histórico")),
   hist_indices |>
     transmute(geo, geo_tipo, regiao, ano,
               variavel = "idx_deflator",
               valor = idx_deflator,
               lo95 = NA_real_, hi95 = NA_real_,
-              tipo = "Histórico")
+              tipo = "Histórico",
+              horizonte = classificar_horizonte(ano, "Histórico"))
 )
 
 # Projetado: 5 variáveis em formato longo
@@ -256,7 +270,8 @@ proj_principal <- bind_rows(
               variavel = "pib_nominal",
               valor = pib_nominal,
               lo95 = pib_lo95, hi95 = pib_hi95,
-              tipo = "Projetado"),
+              tipo = "Projetado",
+              horizonte = classificar_horizonte(ano, "Projetado")),
   proj_rec |>
     left_join(vab_total_ci, by = c("geo", "ano")) |>
 
@@ -264,7 +279,8 @@ proj_principal <- bind_rows(
               variavel = "vab_nominal_total",
               valor = vab_nominal_total,
               lo95 = vab_lo95, hi95 = vab_hi95,
-              tipo = "Projetado"),
+              tipo = "Projetado",
+              horizonte = classificar_horizonte(ano, "Projetado")),
   proj_rec |>
     left_join(imp_ci, by = c("geo", "ano")) |>
 
@@ -272,21 +288,24 @@ proj_principal <- bind_rows(
               variavel = "impostos_nominal",
               valor = impostos_nominal,
               lo95 = imp_lo95, hi95 = imp_hi95,
-              tipo = "Projetado"),
+              tipo = "Projetado",
+              horizonte = classificar_horizonte(ano, "Projetado")),
   proj_rec |>
     left_join(proj_indices_ci, by = c("geo", "ano")) |>
     transmute(geo, geo_tipo, regiao, ano,
               variavel = "idx_vol_pib",
               valor = idx_vol,
               lo95 = idx_vol_lo, hi95 = idx_vol_hi,
-              tipo = "Projetado"),
+              tipo = "Projetado",
+              horizonte = classificar_horizonte(ano, "Projetado")),
   proj_rec |>
     left_join(proj_indices_ci, by = c("geo", "ano")) |>
     transmute(geo, geo_tipo, regiao, ano,
               variavel = "idx_deflator",
               valor = idx_defl,
               lo95 = idx_defl_lo, hi95 = idx_defl_hi,
-              tipo = "Projetado")
+              tipo = "Projetado",
+              horizonte = classificar_horizonte(ano, "Projetado"))
 )
 
 serie_principal <- bind_rows(hist_principal, proj_principal) |>
@@ -321,13 +340,15 @@ hist_mac <- vab_hist |>
   transmute(geo, geo_tipo, regiao, macrossetor, ano,
             vab_nominal = val_corrente,
             vab_lo95 = NA_real_, vab_hi95 = NA_real_,
-            tipo = "Histórico")
+            tipo = "Histórico",
+            horizonte = classificar_horizonte(ano, "Histórico"))
 
 proj_mac <- vab_mac_ci |>
   left_join(geo_meta, by = "geo") |>
   transmute(geo, geo_tipo, regiao, macrossetor, ano,
             vab_nominal, vab_lo95, vab_hi95,
-            tipo = "Projetado")
+            tipo = "Projetado",
+            horizonte = classificar_horizonte(ano, "Projetado"))
 
 vab_macrossetor_out <- bind_rows(hist_mac, proj_mac) |>
   arrange(geo, macrossetor, ano)
@@ -350,13 +371,15 @@ if (!is.null(vab_ativ_hist) && !is.null(vab_ativ_rec)) {
     transmute(geo, geo_tipo, regiao, atividade, macrossetor, ano,
               vab_nominal = val_corrente,
               vab_lo95 = NA_real_, vab_hi95 = NA_real_,
-              tipo = "Histórico")
+              tipo = "Histórico",
+              horizonte = classificar_horizonte(ano, "Histórico"))
 
   proj_ativ <- vab_ativ_rec |>
     left_join(geo_meta |> select(geo, geo_tipo, regiao), by = "geo") |>
     transmute(geo, geo_tipo, regiao, atividade, macrossetor, ano,
               vab_nominal, vab_lo95, vab_hi95,
-              tipo = "Projetado")
+              tipo = "Projetado",
+              horizonte = classificar_horizonte(ano, "Projetado"))
 
   vab_atividade_out <- bind_rows(hist_ativ, proj_ativ) |>
     arrange(geo, atividade, ano)
