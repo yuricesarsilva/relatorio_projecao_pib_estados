@@ -24,8 +24,8 @@ if (length(fim_rel) < 1L) {
 fim <- ini + fim_rel[1L]
 codigo <- linhas[(ini + 1L):(fim - 1L)]
 
-codigo <- sub('BASE_URL <- "\\.\\./data"', 'BASE_URL <- "data"', codigo)
-codigo <- sub('href = "\\.\\./metodologia\\.html"', 'href = "metodologia.html"', codigo)
+codigo <- sub('BASE_URL <- "\\.\\./data"', 'BASE_URL <- "/data"', codigo)
+codigo <- sub('href = "\\.\\./metodologia\\.html"', 'href = "/metodologia/metodologia.html"', codigo)
 codigo <- sub('shinyApp\\(ui, server\\)\\s*$', 'app <- shinyApp(ui, server)', codigo)
 
 app_file <- tempfile("painel_local_", fileext = ".R")
@@ -34,6 +34,16 @@ writeLines(codigo, app_file, useBytes = TRUE)
 dir_antigo <- getwd()
 on.exit(setwd(dir_antigo), add = TRUE)
 setwd(painel_dir)
+
+recursos <- shiny::resourcePaths()
+
+if (!"data" %in% names(recursos)) {
+  shiny::addResourcePath("data", file.path(painel_dir, "data"))
+}
+
+if (!"metodologia" %in% names(recursos)) {
+  shiny::addResourcePath("metodologia", painel_dir)
+}
 
 source(app_file, local = TRUE, encoding = "UTF-8")
 
