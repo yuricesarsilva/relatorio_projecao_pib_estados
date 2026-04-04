@@ -659,3 +659,6 @@ O diretório `_extensions/` gerado deve ser commitado junto com o painel.
 - O `renv.lock` foi atualizado com as dependencias de runtime do preview nativo (`shiny`, `httpuv`, `commonmark`, `sourcetools`, `xtable` e dependencias resolvidas pelo snapshot).
 - Corrigido `preview_painel_local.R` para registrar `painel/data/` e `painel/` como recursos estaticos do Shiny via `addResourcePath()`.
 - Os caminhos do app local foram ajustados para usar `/data` e `/metodologia/metodologia.html`, evitando que o fetch dos CSVs retornasse conteudo incorreto e causasse erros como `object 'geo' not found`.
+- Confirmado no preview nativo que `library(S7)` mascara `validate` do `shiny`, o que explica a mensagem repetida ``object` must be an <S7_object>, not a <NULL>`` nos quatro graficos.
+- Corrigido `painel/painel.qmd` para usar `shiny::validate(shiny::need(...))` explicitamente em todos os `renderPlot()`.
+- Isso remove a ambiguidade entre `S7::validate` e `shiny::validate`, preservando `S7` carregado para o empacotamento do preview web.

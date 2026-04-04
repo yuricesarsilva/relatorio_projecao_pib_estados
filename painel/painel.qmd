@@ -438,7 +438,7 @@ server <- function(input, output, session) {
       df <- dados_serie() |>
         transmute(ano = as.numeric(ano), valor = as.numeric(valor))
 
-      validate(need(nrow(df) > 0, "Sem dados para a combinação selecionada."))
+      shiny::validate(shiny::need(nrow(df) > 0, "Sem dados para a combinação selecionada."))
 
       ggplot(df, aes(x = ano, y = valor)) +
         geom_line(color = COR_HIST, linewidth = 1) +
@@ -459,7 +459,7 @@ server <- function(input, output, session) {
       if (input$macrossetor != "todos")
         df <- df |> filter(macrossetor == input$macrossetor)
 
-      validate(need(nrow(df) > 0, "Sem dados para o macrossetor selecionado."))
+      shiny::validate(shiny::need(nrow(df) > 0, "Sem dados para o macrossetor selecionado."))
 
       if (input$macrossetor == "todos") {
         ggplot(df, aes(x = ano, fill = mac_label, colour = mac_label)) +
@@ -512,7 +512,7 @@ server <- function(input, output, session) {
       if (input$atividade != "todas")
         df <- df |> filter(atividade == input$atividade)
 
-      validate(need(nrow(df) > 0, "Sem dados para a atividade selecionada."))
+      shiny::validate(shiny::need(nrow(df) > 0, "Sem dados para a atividade selecionada."))
 
       if (input$atividade == "todas") {
         ggplot(df, aes(x = ano, fill = ativ_label, colour = ativ_label)) +
@@ -560,13 +560,13 @@ server <- function(input, output, session) {
 
   output$plot_comp <- renderPlot({
     render_plot_erro("plot_comp", {
-      validate(need(length(input$geos_comp) >= 1, "Selecione ao menos um território."))
+      shiny::validate(shiny::need(length(input$geos_comp) >= 1, "Selecione ao menos um território."))
       df <- serie() |>
         filter(geo %in% input$geos_comp, variavel == input$variavel,
                ano <= ano_max()) |>
         mutate(tipo = factor(tipo, levels = c("Histórico", "Projetado")))
 
-      validate(need(nrow(df) > 0, "Sem dados para a combinação selecionada."))
+      shiny::validate(shiny::need(nrow(df) > 0, "Sem dados para a combinação selecionada."))
 
       unidade <- if (eh_indice(input$variavel)) "Índice (2002 = 100)" else "R$ bilhões"
 
