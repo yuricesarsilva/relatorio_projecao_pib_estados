@@ -638,3 +638,6 @@ O diretório `_extensions/` gerado deve ser commitado junto com o painel.
   - aviso lateral sobre horizonte operacional/exploratorio;
   - uso de `horizonte` no fluxo reativo principal de `dados_serie()`.
 - A coluna `horizonte` permanece disponivel apenas nas tabelas exportadas, sem interferir no fluxo dos graficos enquanto a regressao e isolada.
+- Adicionada instrumentacao de diagnostico nos `renderPlot()` do painel.
+- Cada grafico agora captura erros localmente, emite `showNotification()` com o nome do plot que falhou e renderiza um placeholder com a mensagem exata.
+- Isso transforma o erro generico do `shinylive` em diagnostico acionavel por aba (`plot_serie`, `plot_macro`, `plot_ativ`, `plot_comp`), permitindo localizar a regressao real sem tocar na `main`.
