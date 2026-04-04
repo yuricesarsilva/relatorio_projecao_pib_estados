@@ -366,6 +366,17 @@ O diretório `_extensions/` gerado deve ser commitado junto com o painel.
 
 **Arquivos criados:** `plano_reforma.md`
 
+**Complemento da etapa:**
+- Criado `checklist_reforma.md` para acompanhamento operacional da execuÃ§Ã£o do plano.
+- Estruturado o checklist por blocos, com caixas de marcaÃ§Ã£o para:
+  - preservaÃ§Ã£o e baseline;
+  - infraestrutura obrigatÃ³ria;
+  - QA e governanÃ§a analÃ­tica;
+  - reforma estatÃ­stica do baseline univariado;
+  - transparÃªncia, automaÃ§Ã£o e documentaÃ§Ã£o.
+- IncluÃ­da tambÃ©m uma seÃ§Ã£o separada de itens fora do escopo atual, deixando
+  `xreg` e outras frentes metodolÃ³gicas futuras claramente registradas como adiadas.
+
 ---
 
 ## Pipeline completo (`run_all.R`)
