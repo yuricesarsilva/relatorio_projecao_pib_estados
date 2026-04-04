@@ -345,6 +345,29 @@ O diretório `_extensions/` gerado deve ser commitado junto com o painel.
 
 ---
 
+## Etapa 11 â€” Planejamento da reforma do projeto
+
+**O que foi feito:**
+- Revisadas as instruÃ§Ãµes permanentes de `CLAUDE.md` antes de iniciar a nova rodada.
+- Criado `plano_reforma.md` como documento-base da reforma do projeto.
+- Consolidada uma proposta de reforma em camadas, priorizando:
+  - preservaÃ§Ã£o da versÃ£o atual;
+  - governanÃ§a do ambiente;
+  - QA bloqueante;
+  - refino metodolÃ³gico do baseline **univariado**;
+  - transparÃªncia analÃ­tica e automaÃ§Ã£o.
+- Registrado explicitamente que a camada com regressoras exÃ³genas (`xreg`) fica
+  fora desta fase por falta de sÃ©ries auxiliares adequadas no momento.
+- Reordenadas as frentes de trabalho para reduzir retrabalho:
+  - primeiro infraestrutura, configuraÃ§Ã£o, logs e cache;
+  - depois consistÃªncia bloqueante e governanÃ§a do horizonte;
+  - depois reforma do CV e da famÃ­lia de modelos;
+  - por fim diagnÃ³stico no painel, CI/CD e documentaÃ§Ã£o.
+
+**Arquivos criados:** `plano_reforma.md`
+
+---
+
 ## Pipeline completo (`run_all.R`)
 
 - Criado `run_all.R` para execução sequencial dos 5 scripts com tratamento de erros e cronometragem por etapa.
