@@ -600,3 +600,7 @@ O diretório `_extensions/` gerado deve ser commitado junto com o painel.
 **Correcao da raiz do projeto para preview:**
 - Ajustado `.Rprofile` da raiz para carregar `renv/activate.R` a partir de `RENV_PROJECT` quando essa variavel estiver definida.
 - Isso evita falha quando o Quarto ou o `Rscript` executam em subdiretorios como `painel/`.
+
+**Correcao do render do Shinylive no preview:**
+- Ajustado `painel/painel.qmd` para definir `embed-resources: false` no formato dashboard.
+- Isso evita que o Quarto gere um HTML auto-contido incompatível com a execução do `shinylive` no preview local.

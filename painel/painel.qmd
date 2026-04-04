@@ -3,6 +3,7 @@ title: "Secretaria de Planejamento e Orçamento de Roraima — SEPLAN/RR<br><spa
 format:
   dashboard:
     output-file: index.html
+    embed-resources: false
     theme: flatly
     css: custom.css
     logo: ""
