@@ -20,14 +20,22 @@ if (!file.exists(activate)) {
 source(activate, local = FALSE)
 renv_lib <- normalizePath(.libPaths()[1], winslash = "/", mustWork = TRUE)
 
+env_antigo <- Sys.getenv(c("R_PROFILE_USER", "R_LIBS_USER", "RENV_PROJECT"), unset = NA)
+on.exit({
+  if (is.na(env_antigo[["R_PROFILE_USER"]])) Sys.unsetenv("R_PROFILE_USER") else Sys.setenv(R_PROFILE_USER = env_antigo[["R_PROFILE_USER"]])
+  if (is.na(env_antigo[["R_LIBS_USER"]])) Sys.unsetenv("R_LIBS_USER") else Sys.setenv(R_LIBS_USER = env_antigo[["R_LIBS_USER"]])
+  if (is.na(env_antigo[["RENV_PROJECT"]])) Sys.unsetenv("RENV_PROJECT") else Sys.setenv(RENV_PROJECT = env_antigo[["RENV_PROJECT"]])
+}, add = TRUE)
+
+Sys.setenv(
+  R_PROFILE_USER = rprofile,
+  R_LIBS_USER = renv_lib,
+  RENV_PROJECT = projeto
+)
+
 status <- system2(
   command = quarto,
   args = c("preview", "painel/painel.qmd", args),
-  env = c(
-    paste0("R_PROFILE_USER=", rprofile),
-    paste0("R_LIBS_USER=", renv_lib),
-    paste0("RENV_PROJECT=", projeto)
-  ),
   stdout = "",
   stderr = ""
 )

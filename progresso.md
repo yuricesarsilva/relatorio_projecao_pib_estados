@@ -589,3 +589,6 @@ O diretório `_extensions/` gerado deve ser commitado junto com o painel.
 **Correcao complementar do ambiente:**
 - Ajustados `preview_painel.R`, `preview_painel.ps1` e `render_painel.ps1` para repassar explicitamente `R_PROFILE_USER`, `R_LIBS_USER` e `RENV_PROJECT` ao Quarto.
 - Isso evita que o `Rscript` interno do filtro `shinylive` rode fora da biblioteca do `renv`.
+
+**Correcao do script R de preview:**
+- Ajustado `preview_painel.R` para definir as variaveis de ambiente com `Sys.setenv()` antes do `system2()`, em vez de usar o argumento `env`, que no Windows acabou sendo interpretado como argumento do Quarto.
