@@ -10,8 +10,10 @@ PROJETO_CONFIG <- list(
   ANO_OPERACIONAL_FIM = 2026L,
   ANO_EXPLORATORIO_INI = 2027L,
   MIN_TRAIN = 15L,
-  HORIZONTES_CV = 1L,
-  PESOS_CV = 1,
+  HORIZONTES_CV = c(1L, 2L, 3L),
+  PESOS_CV = c(0.5, 0.3, 0.2),
+  N_FINALISTAS = 3L,
+  MAX_FALLBACK_PCT = 0.10,
   SEED_GLOBAL = 12345L,
   R_VERSAO_PROJETO = "4.4.0",
   TOL_IDENTIDADE_PIB = 1e-04,
@@ -20,7 +22,7 @@ PROJETO_CONFIG <- list(
   TOL_VAB_ATIVIDADES = 1,
   LOG_DIR = "output/logs",
   CACHE_DIR = "dados",
-  CACHE_SCHEMA_VERSION = "bloco2_v1",
+  CACHE_SCHEMA_VERSION = "bloco4_v1",
   CACHE_MODELOS_PATH = "dados/selecao_modelos.rds",
   CACHE_MODELOS_META_PATH = "dados/selecao_modelos_meta.rds"
 )

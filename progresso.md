@@ -674,3 +674,57 @@ O diretório `_extensions/` gerado deve ser commitado junto com o painel.
 - `painel/data/vab_macrossetor.csv` ficou com `3.300` linhas, projeções apenas em `2024–2026`;
 - `painel/data/vab_atividade.csv` ficou com `9.900` linhas, projeções apenas em `2024–2026`;
 - os três arquivos mantêm a coluna `horizonte`, mas o painel público já limita a exibição ao horizonte `h=3`.
+
+---
+
+## Etapa 19 — Bloco 4 da reforma: reforma estatística do baseline univariado
+
+**O que foi feito:**
+
+**`R/config.R`:**
+- `HORIZONTES_CV` expandido de `1L` para `c(1L, 2L, 3L)` — CV avalia h=1, h=2 e h=3 simultaneamente.
+- `PESOS_CV` expandido de `1` para `c(0.5, 0.3, 0.2)` — maior peso ao curto prazo, alinhado ao horizonte operacional h=3.
+- Adicionado `N_FINALISTAS = 3L` — top 3 da triagem rápida avançam ao stage 2.
+- Adicionado `MAX_FALLBACK_PCT = 0.10` — pipeline interrompe se mais de 10% das séries precisarem de fallback.
+- `CACHE_SCHEMA_VERSION` atualizado para `"bloco4_v1"` — invalida automaticamente caches do Bloco 2.
+
+**`R/03_projecao.R`:**
+
+*Família de modelos reduzida de 10 para 7:*
+- Removidos: `sarima` (period=2 em dados anuais é artifício sem respaldo), `nnar` (instável com ~22 observações), `prophet` (superdimensionado para séries anuais sem sazonalidade).
+- Mantidos: `rw`, `arma`, `arima`, `ets`, `ets_amort`, `theta`, `ssm`.
+- Removida também a função `prophet_fc` e o `library(prophet)`.
+
+*CV multi-horizonte (substitui `cv_erros` e `metricas`):*
+- Nova função `cv_erros_multi()`: expanding window que ajusta o modelo uma vez com `h_max = max(HORIZONTES_CV)` e coleta erros para cada horizonte em matriz (linhas = janelas, colunas = h1/h2/h3).
+- Nova função `metricas_multi()`: computa MASE por horizonte e agrega com `PESOS_CV` em `mase_ponderado`.
+- Para série de 22 anos com MIN_TRAIN=15 e h_max=3: 5 janelas de CV válidas.
+
+*Two-stage CV (Parte 4):*
+- Stage 1 (triagem rápida, approx=TRUE): roda `cv_erros_multi` para todos os 7 modelos; seleciona top `N_FINALISTAS=3` por `mase_ponderado`.
+- Stage 2 (avaliação precisa, approx=FALSE): reavalia apenas os 3 finalistas com `MODELOS_PRECISO`; para modelos não-ARIMA (rw, ets, ets_amort, theta, ssm) reutiliza resultado do stage 1 sem recalcular.
+- Vencedor: menor `mase_ponderado` do stage 2 — especificação coerente com a projeção final.
+- Salvo `dados/metricas_cv_detalhadas.rds`: uma linha por série × modelo × horizonte com n_ok, rmse, mae, mase, mase_ponderado — entrada para diagnóstico do Bloco 5.
+
+*`selecao_cv` (estrutura atualizada):*
+- `mase_ponderado`: métrica de seleção do vencedor (stage 2).
+- `mase_venc_h1`, `mase_venc_h2`, `mase_venc_h3`: MASE do vencedor por horizonte (diagnóstico).
+- `mase_pond_<modelo>`: MASE ponderado do stage 1 para todos os modelos (referência comparativa).
+
+*Fallback estruturado (substitui `fallback_count`):*
+- `fallback_log` inicializado como tibble com colunas: `serie_id`, `modelo_original`, `modelo_fallback`, `etapa`, `motivo`.
+- Cada fallback acrescenta uma linha com o motivo do erro.
+- Ao final: salvo em `dados/fallback_log.rds`.
+- Pipeline interrompe com erro se `nrow(fallback_log) / length(ids) > MAX_FALLBACK_PCT`.
+
+*`params_modelos.rds` atualizado:*
+- Substituídas colunas `mase_melhor/rmse_melhor/mae_melhor` por `mase_ponderado` + `mase_venc_h1/h2/h3`.
+
+**Arquivos modificados:** `R/config.R`, `R/03_projecao.R`
+
+**Novos outputs gerados pelo pipeline:**
+
+| Arquivo | Conteúdo |
+|---------|----------|
+| `dados/metricas_cv_detalhadas.rds` | Métricas por série × modelo × horizonte (stage 1) |
+| `dados/fallback_log.rds` | Log estruturado de fallbacks por série |

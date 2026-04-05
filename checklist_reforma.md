@@ -60,25 +60,25 @@
 
 ### Validação cruzada e seleção
 
-- [ ] Redesenhar o CV para múltiplos horizontes
-- [ ] Definir pesos dos horizontes do CV
-- [ ] Salvar métricas por horizonte e por modelo
-- [ ] Alinhar a triagem do CV com a estimação final
-- [ ] Reavaliar finalistas com a especificação final
+- [x] Redesenhar o CV para múltiplos horizontes
+- [x] Definir pesos dos horizontes do CV
+- [x] Salvar métricas por horizonte e por modelo
+- [x] Alinhar a triagem do CV com a estimação final
+- [x] Reavaliar finalistas com a especificação final
 
 ### Família de modelos
 
-- [ ] Definir a família principal de modelos do baseline
-- [ ] Mover modelos experimentais para trilha separada ou removê-los do baseline
+- [x] Definir a família principal de modelos do baseline
+- [x] Mover modelos experimentais para trilha separada ou removê-los do baseline
 - [ ] Atualizar README com a nova família de modelos
 - [ ] Atualizar metodologia com a nova família de modelos
 
 ### Robustez de execução
 
-- [ ] Registrar warnings e erros por série/modelo
-- [ ] Registrar fallback por série
-- [ ] Definir limiar máximo aceitável de fallback
-- [ ] Fazer o pipeline falhar se a degradação exceder o limite
+- [x] Registrar warnings e erros por série/modelo
+- [x] Registrar fallback por série
+- [x] Definir limiar máximo aceitável de fallback
+- [x] Fazer o pipeline falhar se a degradação exceder o limite
 
 ---
 
@@ -127,5 +127,5 @@
 - [x] Bloco 1 concluído
 - [x] Bloco 2 concluído
 - [x] Bloco 3 concluído
-- [ ] Bloco 4 concluído
+- [x] Bloco 4 concluído (parcial — README e metodologia pendentes)
 - [ ] Bloco 5 concluído
