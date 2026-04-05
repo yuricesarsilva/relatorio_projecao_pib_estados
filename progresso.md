@@ -639,3 +639,8 @@ O diretório `_extensions/` gerado deve ser commitado junto com o painel.
 **Correção adicional no preview local:**
 - `preview_painel_local.R` passou a tratar também os links relativos atuais da nota metodológica;
 - o clique em "Nota Metodológica" no preview local deve apontar para `/metodologia/metodologia.html`, evitando a página `not found`.
+
+**Alinhamento final da nota metodológica ao painel público:**
+- `painel/metodologia.html` foi reescrita para falar apenas do produto exibido no painel;
+- o horizonte metodológico passou a ser apresentado como `2024–2026 (h=3)` em todo o texto;
+- foram removidas referências remanescentes a horizonte operacional/exploratório e ao recorte `2024–2031` no corpo da nota.
