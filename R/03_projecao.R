@@ -429,11 +429,17 @@ if (cache_reutilizado) {
   # --------------------------------------------------------------------------
   message("  Stage 2: avaliacao precisa (finalistas × approx=FALSE para ARIMA/ARMA)...")
 
+  # Para séries anuais de ~22 obs, ordens acima de p/q=3 não têm suporte
+  # estatístico — limitar o grid reduz drasticamente o tempo sem perda real.
   MODELOS_PRECISO <- MODELOS
   MODELOS_PRECISO$arima <- function(x, h) forecast(auto.arima(x,
-                              stepwise = FALSE, approximation = FALSE), h = h)
+                              stepwise = FALSE, approximation = FALSE,
+                              max.p = 3, max.q = 3, max.d = 2,
+                              max.P = 0, max.Q = 0, max.D = 0), h = h)
   MODELOS_PRECISO$arma  <- function(x, h) forecast(auto.arima(x, d = 0,
-                              stepwise = FALSE, approximation = FALSE), h = h)
+                              stepwise = FALSE, approximation = FALSE,
+                              max.p = 3, max.q = 3,
+                              max.P = 0, max.Q = 0, max.D = 0), h = h)
   MODELOS_ARIMA_EXACTOS <- c("arima", "arma")
 
   metricas_s2 <- map_dfr(seq_along(ids), function(i) {
@@ -524,9 +530,13 @@ print(sort(table(selecao_cv$melhor_modelo), decreasing = TRUE))
 # Para projeção final: ARIMA/ARMA sem approximation (mais preciso)
 MODELOS_FINAL <- MODELOS
 MODELOS_FINAL$arima <- function(x, h) forecast(auto.arima(x,
-                                  stepwise = FALSE, approximation = FALSE), h = h)
+                                  stepwise = FALSE, approximation = FALSE,
+                                  max.p = 3, max.q = 3, max.d = 2,
+                                  max.P = 0, max.Q = 0, max.D = 0), h = h)
 MODELOS_FINAL$arma  <- function(x, h) forecast(auto.arima(x, d = 0,
-                                  stepwise = FALSE, approximation = FALSE), h = h)
+                                  stepwise = FALSE, approximation = FALSE,
+                                  max.p = 3, max.q = 3,
+                                  max.P = 0, max.Q = 0, max.D = 0), h = h)
 
 message("\nGerando projeções finais...")
 
