@@ -321,7 +321,7 @@ ui <- page_sidebar(
       "align-items:center; font-size:0.76em; color:#111; line-height:1.3;"
     ),
     tags$span(
-      "Fonte: IBGE Contas Regionais (2002–2023). Projeções próprias com reconciliação top-down (2024–2031)."
+      "Fonte: IBGE Contas Regionais (2002–2023). Projeções próprias com reconciliação top-down (2024–2026)."
     ),
     tags$span(
       style = "text-align:right;",
@@ -599,7 +599,8 @@ server <- function(input, output, session) {
 
     df <- if (input$tabela_fonte == "serie") {
       serie() |>
-        filter(geo == input$tabela_geo, variavel == input$tabela_var) |>
+        filter(geo == input$tabela_geo, variavel == input$tabela_var,
+               ano <= ano_max()) |>
         transmute(
           Território = geo, Tipo = tipo, Ano = ano,
           Variável   = coalesce(VARIAVEL_LABEL[variavel], variavel),
@@ -609,7 +610,7 @@ server <- function(input, output, session) {
         )
     } else if (input$tabela_fonte == "macrossetor") {
       d <- vab_mac() |>
-        filter(geo == input$tabela_geo_mac)
+        filter(geo == input$tabela_geo_mac, ano <= ano_max())
       if (input$tabela_mac != "todos")
         d <- d |> filter(macrossetor == input$tabela_mac)
       d |> transmute(
@@ -621,7 +622,7 @@ server <- function(input, output, session) {
       )
     } else {
       d <- vab_ativ() |>
-        filter(geo == input$tabela_geo_ativ)
+        filter(geo == input$tabela_geo_ativ, ano <= ano_max())
       if (input$tabela_ativ != "todas")
         d <- d |> filter(atividade == input$tabela_ativ)
       d |> transmute(

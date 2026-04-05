@@ -631,3 +631,7 @@ O diretório `_extensions/` gerado deve ser commitado junto com o painel.
 - as saídas técnicas passam a incluir duas planilhas auxiliares:
   - `output/tabelas/projecoes_painel_h3.xlsx`
   - `output/tabelas/projecoes_painel_h8.xlsx`
+
+**Correção adicional no painel:**
+- a aba de tabela passou a filtrar explicitamente `ano <= ano_max()`, para não exibir mais do que o horizonte público mesmo quando os CSVs ainda não tiverem sido regenerados;
+- o rodapé do painel foi ajustado para informar `2024–2026` em vez de `2024–2031`.
