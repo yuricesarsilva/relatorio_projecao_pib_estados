@@ -13,11 +13,18 @@ library(tidyverse)
 # Deve ser executado a partir da raiz do projeto após rodar o pipeline
 # completo (01 a 04).
 #
-# Saídas em painel/data/:
+# Saídas públicas em painel/data/:
 #   serie_principal.csv  — histórico + projetado para 5 variáveis agregadas,
-#                          com IC 95% no período projetado
-#   vab_macrossetor.csv  — histórico + projetado por macrossetor, com IC 95%
-#   vab_atividade.csv    — histórico + projetado por atividade, com IC 95%
+#                          limitado ao horizonte público do painel
+#   vab_macrossetor.csv  — histórico + projetado por macrossetor, limitado ao
+#                          horizonte público do painel
+#   vab_atividade.csv    — histórico + projetado por atividade, limitado ao
+#                          horizonte público do painel
+#
+# Saída técnica adicional:
+#   output/tabelas/projecoes_painel_h8.xlsx
+#     — mesmas estruturas do painel, mas preservando o horizonte técnico
+#       completo (2024–2031)
 #
 # Estrutura comum (formato longo):
 #   geo, geo_tipo, regiao, ano, <variavel(is)>, lo95, hi95, tipo, horizonte
@@ -27,6 +34,7 @@ library(tidyverse)
 # ==============================================================================
 
 dir.create("painel/data", recursive = TRUE, showWarnings = FALSE)
+dir.create("output/tabelas", recursive = TRUE, showWarnings = FALSE)
 
 message("Carregando dados...")
 esp         <- readRDS("dados/especiais.rds")
@@ -219,6 +227,11 @@ classificar_horizonte <- function(ano, tipo) {
   )
 }
 
+filtrar_horizonte_painel <- function(df) {
+  df |>
+    filter(tipo == "Histórico" | ano <= ANO_PAINEL_PROJ_FIM)
+}
+
 # Histórico: 5 variáveis em formato longo (geo_tipo/regiao já nas séries)
 hist_principal <- bind_rows(
   pib_nom_hist |>
@@ -311,9 +324,11 @@ proj_principal <- bind_rows(
 serie_principal <- bind_rows(hist_principal, proj_principal) |>
   arrange(geo, variavel, ano)
 
-write.csv(serie_principal, "painel/data/serie_principal.csv",
+serie_principal_painel <- filtrar_horizonte_painel(serie_principal)
+
+write.csv(serie_principal_painel, "painel/data/serie_principal.csv",
           row.names = FALSE, na = "")
-message("  serie_principal.csv: ", nrow(serie_principal), " linhas")
+message("  serie_principal.csv: ", nrow(serie_principal_painel), " linhas")
 
 # ==============================================================================
 # 2. vab_macrossetor.csv
@@ -353,9 +368,11 @@ proj_mac <- vab_mac_ci |>
 vab_macrossetor_out <- bind_rows(hist_mac, proj_mac) |>
   arrange(geo, macrossetor, ano)
 
-write.csv(vab_macrossetor_out, "painel/data/vab_macrossetor.csv",
+vab_macrossetor_painel <- filtrar_horizonte_painel(vab_macrossetor_out)
+
+write.csv(vab_macrossetor_painel, "painel/data/vab_macrossetor.csv",
           row.names = FALSE, na = "")
-message("  vab_macrossetor.csv: ", nrow(vab_macrossetor_out), " linhas")
+message("  vab_macrossetor.csv: ", nrow(vab_macrossetor_painel), " linhas")
 
 # ==============================================================================
 # 3. vab_atividade.csv
@@ -384,11 +401,45 @@ if (!is.null(vab_ativ_hist) && !is.null(vab_ativ_rec)) {
   vab_atividade_out <- bind_rows(hist_ativ, proj_ativ) |>
     arrange(geo, atividade, ano)
 
-  write.csv(vab_atividade_out, "painel/data/vab_atividade.csv",
+  vab_atividade_painel <- filtrar_horizonte_painel(vab_atividade_out)
+
+  write.csv(vab_atividade_painel, "painel/data/vab_atividade.csv",
             row.names = FALSE, na = "")
-  message("  vab_atividade.csv: ", nrow(vab_atividade_out), " linhas")
+  message("  vab_atividade.csv: ", nrow(vab_atividade_painel), " linhas")
 } else {
   message("vab_atividade_hist.rds ou vab_atividade_reconciliada.rds não encontrados — pulando.")
 }
+
+message("Salvando saída técnica adicional com horizonte completo (h=8)...")
+
+wb_h8 <- openxlsx::createWorkbook()
+
+serie_principal_h8 <- serie_principal |>
+  filter(tipo == "Projetado")
+
+vab_macrossetor_h8 <- vab_macrossetor_out |>
+  filter(tipo == "Projetado")
+
+openxlsx::addWorksheet(wb_h8, "serie_principal_h8")
+openxlsx::writeData(wb_h8, "serie_principal_h8", serie_principal_h8)
+
+openxlsx::addWorksheet(wb_h8, "vab_macrossetor_h8")
+openxlsx::writeData(wb_h8, "vab_macrossetor_h8", vab_macrossetor_h8)
+
+if (exists("vab_atividade_out")) {
+  vab_atividade_h8 <- vab_atividade_out |>
+    filter(tipo == "Projetado")
+
+  openxlsx::addWorksheet(wb_h8, "vab_atividade_h8")
+  openxlsx::writeData(wb_h8, "vab_atividade_h8", vab_atividade_h8)
+}
+
+openxlsx::saveWorkbook(
+  wb_h8,
+  "output/tabelas/projecoes_painel_h8.xlsx",
+  overwrite = TRUE
+)
+
+message("  projecoes_painel_h8.xlsx: horizonte técnico 2024–2031 preservado")
 
 message("\n06_exportar_painel.R concluído. CSVs em painel/data/")

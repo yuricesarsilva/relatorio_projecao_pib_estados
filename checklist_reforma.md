@@ -103,8 +103,8 @@
 
 ### Documentação
 
-- [ ] Atualizar `README.md`
-- [ ] Atualizar `painel/metodologia.html`
+- [x] Atualizar `README.md`
+- [x] Atualizar `painel/metodologia.html`
 - [ ] Criar `docs/arquitetura.md`
 - [ ] Criar `docs/qa.md`
 - [ ] Criar `docs/modelagem.md`

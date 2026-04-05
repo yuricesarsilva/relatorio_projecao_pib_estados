@@ -596,3 +596,31 @@ O diretório `_extensions/` gerado deve ser commitado junto com o painel.
 
 **Resultado prático:**
 - o preview local deixa de exibir os placeholders vermelhos usados no diagnóstico anterior e volta a mostrar apenas o comportamento normal do painel.
+
+---
+
+## Etapa 17 — Redefinição agressiva do horizonte público do painel
+
+**Objetivo:**
+- restringir o produto público ao horizonte `h=3`, preservando o horizonte técnico completo `h=8` fora do painel.
+
+**O que foi alterado até aqui:**
+- `R/config.R`
+  - adicionados `H_PAINEL = 3L` e `ANO_PAINEL_PROJ_FIM = 2026L`;
+  - reclassificado o corte operacional para `2026` e o técnico complementar a partir de `2027`.
+- `R/06_exportar_painel.R`
+  - os CSVs em `painel/data/` passam a ser filtrados para o horizonte público do painel;
+  - criada a saída técnica adicional `output/tabelas/projecoes_painel_h8.xlsx`, preservando o horizonte completo de projeção.
+- `painel/painel.qmd`
+  - o painel passa a trabalhar com `ANO_PROJ_FIM = 2026L`;
+  - o cálculo do horizonte exibido foi fixado em `H_PAINEL`.
+- `README.md`
+  - adicionada seção explícita esclarecendo a separação entre painel público (`h=3`) e saída técnica (`h=8`);
+  - atualizada a seção de outputs para documentar `projecoes_painel_h8.xlsx`.
+- `painel/metodologia.html`
+  - adicionada observação no topo informando que o painel público foi reduzido para `2024–2026`, mesmo quando o pipeline técnico segue até `2031`.
+- `checklist_reforma.md`
+  - marcadas as atualizações de `README.md` e `painel/metodologia.html`.
+
+**Pendência operacional:**
+- regenerar os CSVs do painel e a planilha técnica `h=8` localmente, pois as tentativas automáticas desta sessão ficaram instáveis no shell.

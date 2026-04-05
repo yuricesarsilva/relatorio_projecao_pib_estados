@@ -13,6 +13,15 @@ Projeções do PIB nominal, VAB por macrossetor e atividade, impostos, deflator 
 
 **[Nota Metodológica](https://yuricesarsilva.github.io/painel_projecao_pib_estados/metodologia.html)**
 
+## Atualização do Horizonte Público
+
+Esta versão do projeto adota uma separação explícita entre:
+
+- **painel público (`h=3`)**: o produto visual e os CSVs consumidos pelo painel passam a exibir apenas `2024–2026`;
+- **saída técnica (`h=8`)**: o horizonte completo `2024–2031` continua sendo gerado e fica disponível em `output/tabelas/projecoes_painel_h8.xlsx`.
+
+Sempre que houver referência antiga a `2024–2031` como horizonte do painel, considere que ela foi substituída por esta regra mais recente: **o painel mostra só três anos projetados; o horizonte longo fica fora do painel**.
+
 O painel permite visualizar:
 - Séries históricas (2002–2023) e projeções (2024–2031) com intervalo de confiança de 95%
 - Destaque analítico para `2024–2027` como **horizonte operacional**
@@ -176,10 +185,11 @@ Esse helper reaproveita o bloco `shinylive-r` de `painel/painel.qmd`, mas serve 
 | Arquivo/Pasta | Conteúdo |
 |---------------|----------|
 | `output/tabelas/projecoes_pib_estadual.xlsx` | Tabelas com projeções (9 abas) |
+| `output/tabelas/projecoes_painel_h8.xlsx` | Saída técnica adicional com o horizonte projetado completo usado fora do painel |
 | `output/graficos/` | Gráficos PNG por variável e por território |
-| `painel/data/serie_principal.csv` | Séries históricas + projetadas, 5 variáveis, IC 95% |
-| `painel/data/vab_macrossetor.csv` | VAB histórico + projetado por macrossetor, IC 95% |
-| `painel/data/vab_atividade.csv` | VAB histórico + projetado por atividade, IC 95% |
+| `painel/data/serie_principal.csv` | Séries históricas + projeções públicas até 2026, 5 variáveis, IC 95% |
+| `painel/data/vab_macrossetor.csv` | VAB histórico + projeções públicas até 2026 por macrossetor, IC 95% |
+| `painel/data/vab_atividade.csv` | VAB histórico + projeções públicas até 2026 por atividade, IC 95% |
 | `painel/metodologia.html` | Nota metodológica publicada no GitHub Pages |
 
 ---
