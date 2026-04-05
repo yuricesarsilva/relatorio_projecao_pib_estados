@@ -37,6 +37,18 @@ codigo <- sub(
   codigo,
   fixed = TRUE
 )
+codigo <- sub(
+  'href = "../metodologia.html"',
+  'href = "/metodologia/metodologia.html"',
+  codigo,
+  fixed = TRUE
+)
+codigo <- sub(
+  'href = "metodologia.html"',
+  'href = "/metodologia/metodologia.html"',
+  codigo,
+  fixed = TRUE
+)
 codigo <- sub('shinyApp\\(ui, server\\)\\s*$', 'app <- shinyApp(ui, server)', codigo)
 
 app_file <- tempfile("painel_local_", fileext = ".R")
