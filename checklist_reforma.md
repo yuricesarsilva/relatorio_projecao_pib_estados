@@ -134,7 +134,7 @@
 
 - [x] Adicionar etapa 0 opcional em `run_all.R`
 - [x] Documentar pacotes necessários (httr2, sidrar, jsonlite, openxlsx)
-- [ ] Instalar pacotes novos e atualizar `renv.lock`
+- [x] Instalar pacotes novos e atualizar `renv.lock` (httr2 1.2.2, sidrar 0.2.9, rjson 0.2.23)
 
 ---
 
@@ -154,4 +154,4 @@
 - [x] Bloco 3 concluído
 - [x] Bloco 4 concluído
 - [x] Bloco 5 concluído
-- [ ] Bloco 6 concluído (pendente: instalar httr2/sidrar/openxlsx e atualizar renv.lock)
+- [x] Bloco 6 concluído
