@@ -15,6 +15,7 @@ filters:
 resources:
   - data/
   - metodologia.html
+  - data/tabela_painel.xlsx
 engine: knitr
 execute:
   echo: false
@@ -312,6 +313,16 @@ ui <- page_sidebar(
           "padding-bottom: 1px; letter-spacing: 0.02em;"
         ),
         "Nota Metodológica"
+      ),
+      tags$br(),
+      tags$a(
+        href = "../data/tabela_painel.xlsx", download = NA,
+        style = paste(
+          "display: inline-block; margin-top: 8px; font-size: 0.82em; color: #333;",
+          "text-decoration: none; border-bottom: 1px solid #aaa;",
+          "padding-bottom: 1px; letter-spacing: 0.02em;"
+        ),
+        "Download da Tabela (xlsx)"
       )
     )
   ),

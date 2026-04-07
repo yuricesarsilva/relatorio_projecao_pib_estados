@@ -510,4 +510,107 @@ diagnostico <- params |>
 write_csv(diagnostico, "painel/data/diagnostico.csv")
 message("  diagnostico.csv: ", nrow(diagnostico), " séries")
 
+# ==============================================================================
+# XLSX público para download no painel
+# Mesmo conteúdo dos CSVs do painel (histórico + projetado até ANO_PAINEL_PROJ_FIM),
+# com colunas renomeadas para português, salvo em painel/data/ para ser
+# servido como arquivo estático via GitHub Pages.
+# ==============================================================================
+
+message("\nGerando tabela_painel.xlsx para download público...")
+
+VARIAVEL_LABEL_PT <- c(
+  pib_nominal       = "PIB Nominal (R$ milhões)",
+  vab_nominal_total = "VAB Nominal Total (R$ milhões)",
+  impostos_nominal  = "Impostos Líquidos de Subsídios (R$ milhões)",
+  idx_vol_pib       = "PIB Real — Índice Acumulado (base 100 = 2002)",
+  idx_deflator      = "Deflator Implícito — Índice Acumulado (base 100 = 2002)"
+)
+
+MACRO_LABEL_PT <- c(
+  agropecuaria = "Agropecuária",
+  industria    = "Indústria",
+  adm_publica  = "Adm. Pública",
+  servicos     = "Serviços"
+)
+
+ATIV_LABEL_PT <- c(
+  agropecuaria           = "Agropecuária",
+  ind_extrativa          = "Ind. Extrativas",
+  ind_transformacao      = "Ind. de Transformação",
+  eletricidade_gas_agua  = "Eletricidade/Gás/Água",
+  construcao             = "Construção",
+  comercio_veiculos      = "Comércio e Veículos",
+  transporte_armazenagem = "Transporte e Armazenagem",
+  informacao_comunicacao = "Informação e Comunicação",
+  financeiro_seguros     = "Financeiro e Seguros",
+  imobiliaria            = "Atividades Imobiliárias",
+  adm_publica            = "Adm. Pública",
+  outros_servicos        = "Outros Serviços"
+)
+
+aba_serie <- serie_principal_painel |>
+  mutate(variavel = coalesce(VARIAVEL_LABEL_PT[variavel], variavel)) |>
+  select(
+    `Território`               = geo,
+    `Tipo Território`          = geo_tipo,
+    `Região`                   = regiao,
+    `Ano`                      = ano,
+    `Variável`                 = variavel,
+    `Valor`                    = valor,
+    `Limite Inferior (IC 95%)` = lo95,
+    `Limite Superior (IC 95%)` = hi95,
+    `Tipo`                     = tipo,
+    `Horizonte`                = horizonte
+  )
+
+aba_macro <- vab_macrossetor_painel |>
+  mutate(macrossetor = coalesce(MACRO_LABEL_PT[macrossetor], macrossetor)) |>
+  select(
+    `Território`                        = geo,
+    `Tipo Território`                   = geo_tipo,
+    `Região`                            = regiao,
+    `Macrossetor`                       = macrossetor,
+    `Ano`                               = ano,
+    `VAB Nominal (R$ milhões)`          = vab_nominal,
+    `Limite Inferior VAB (IC 95%)`      = vab_lo95,
+    `Limite Superior VAB (IC 95%)`      = vab_hi95,
+    `Tipo`                              = tipo,
+    `Horizonte`                         = horizonte
+  )
+
+aba_ativ <- if (exists("vab_atividade_painel")) {
+  vab_atividade_painel |>
+    mutate(
+      macrossetor = coalesce(MACRO_LABEL_PT[macrossetor], macrossetor),
+      atividade   = coalesce(ATIV_LABEL_PT[atividade], atividade)
+    ) |>
+    select(
+      `Território`                        = geo,
+      `Tipo Território`                   = geo_tipo,
+      `Região`                            = regiao,
+      `Macrossetor`                       = macrossetor,
+      `Atividade`                         = atividade,
+      `Ano`                               = ano,
+      `VAB Nominal (R$ milhões)`          = vab_nominal,
+      `Limite Inferior VAB (IC 95%)`      = vab_lo95,
+      `Limite Superior VAB (IC 95%)`      = vab_hi95,
+      `Tipo`                              = tipo,
+      `Horizonte`                         = horizonte
+    )
+} else NULL
+
+wb_pub <- openxlsx::createWorkbook()
+openxlsx::addWorksheet(wb_pub, "Série Principal")
+openxlsx::writeData(wb_pub, "Série Principal", aba_serie)
+openxlsx::addWorksheet(wb_pub, "VAB Macrossetor")
+openxlsx::writeData(wb_pub, "VAB Macrossetor", aba_macro)
+if (!is.null(aba_ativ)) {
+  openxlsx::addWorksheet(wb_pub, "VAB Atividade")
+  openxlsx::writeData(wb_pub, "VAB Atividade", aba_ativ)
+}
+openxlsx::saveWorkbook(wb_pub, "painel/data/tabela_painel.xlsx", overwrite = TRUE)
+message("  tabela_painel.xlsx: ", nrow(aba_serie), " linhas (série), ",
+        nrow(aba_macro), " linhas (macro)")
+
 message("\n06_exportar_painel.R concluído. CSVs em painel/data/")
