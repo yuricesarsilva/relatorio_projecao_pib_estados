@@ -323,7 +323,7 @@ ui <- page_sidebar(
           "text-decoration: none; border-bottom: 1px solid #aaa;",
           "padding-bottom: 1px; letter-spacing: 0.02em;"
         ),
-        "Download da Tabela (xlsx)"
+        "Download da Tabela das Proje\u00e7\u00f5es"
       )
     )
   ),
