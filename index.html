@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.36">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Secretaria de Planejamento e Orçamento de Roraima — SEPLAN/RR Coordenação-Geral de Estudos Econômicos e Sociais — CGEES</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="painel_files/libs/clipboard/clipboard.min.js"></script>
+<script src="painel_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="painel_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="painel_files/libs/quarto-html/popper.min.js"></script>
+<script src="painel_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="painel_files/libs/quarto-html/anchor.min.js"></script>
+<link href="painel_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="painel_files/libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="painel_files/libs/quarto-html/quarto-syntax-highlighting-dark-f418161beb48e0141c760e455f12af2c.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="painel_files/libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="painel_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="painel_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="painel_files/libs/bootstrap/bootstrap-49c92490b8cf1efe395c09df729d393c.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="painel_files/libs/bootstrap/bootstrap-dark-49c92490b8cf1efe395c09df729d393c.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
+<link href="painel_files/libs/bootstrap/bootstrap-49c92490b8cf1efe395c09df729d393c.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script src="painel_files/libs/quarto-dashboard/quarto-dashboard.js"></script>
+<script src="painel_files/libs/quarto-dashboard/stickythead.js"></script>
+
+
+
+<script src="painel_files/libs/quarto-dashboard/web-components.js" type="module"></script>
+<script src="painel_files/libs/quarto-dashboard/components.js"></script>
+
+<meta name="shinylive:serviceworker_dir" content=".">
+<script src="painel_files/libs/quarto-contrib/shinylive-0.10.8/shinylive/load-shinylive-sw.js" type="module"></script>
+<script src="painel_files/libs/quarto-contrib/shinylive-0.10.8/shinylive/run-python-blocks.js" type="module"></script>
+<link href="painel_files/libs/quarto-contrib/shinylive-0.10.8/shinylive/shinylive.css" rel="stylesheet">
+<link href="painel_files/libs/quarto-contrib/shinylive-quarto-css/shinylive-quarto.css" rel="stylesheet">
+
+
+<link rel="stylesheet" href="custom.css">
+</head>
+
+<body class="quarto-dashboard dashboard-fill fullcontent quarto-light">
+
+<header id="quarto-dashboard-header">
+<nav class="navbar navbar-expand-md slim" data-bs-theme="dark">
+  <div class="navbar-container container-fluid">
+    <button class="navbar-toggler hidden" type="button" data-bs-toggle="collapse" data-bs-target="#dashboard-collapse" aria-controls="dashboard-collapse" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>    
+
+
+    <div class="navbar-brand-container">
+
+
+      <div class="navbar-title">
+        <div class="navbar-title-text"><a href="#">Secretaria de Planejamento e Orçamento de Roraima — SEPLAN/RR<br><span style="font-size:0.75em; font-weight:400; opacity:0.85;">Coordenação-Geral de Estudos Econômicos e Sociais — CGEES</span></a></div>
+        
+        
+      </div>
+    </div>
+<div class="quarto-dashboard-links"><a class="quarto-dashboard-link" href="https://github.com/yuricesarsilva/painel_projecao_pib_estados"><i class="bi bi-github"></i></a></div></div>
+</nav>
+</header>
+<div class="page-layout-custom quarto-dashboard-content bslib-gap-spacing html-fill-container bslib-page-fill">  
+
+<div class="bslib-grid-item html-fill-item bslib-grid" data-layout="fill" style="display: grid; grid-template-rows: minmax(3em, max-content); grid-auto-columns: minmax(0, 1fr);">
+<div class="card bslib-card html-fill-container" data-fill="false" data-bslib-card-init="" data-require-bs-caller="card()" data-full-screen="false">
+<div class="card-body html-fill-item html-fill-container">
+<pre class="shinylive-r" data-engine="r"><code>#| '!! shinylive warning !!': |
+#|   shinylive does not work in self-contained HTML documents.
+#|   Please set `embed-resources: false` in your metadata.
+#| standalone: true
+#| viewerHeight: 850
+
+library(shiny)
+library(bslib)
+library(S7)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(DT)
+library(scales)
+
+# ==============================================================================
+# Constantes
+# ==============================================================================
+
+ANO_HIST_INI &lt;- 2002L
+ANO_HIST_FIM &lt;- 2023L
+H_PAINEL &lt;- 3L
+ANO_PROJ_FIM &lt;- 2026L
+SENHA_PAINEL &lt;- "seplan2026"
+
+GEO_ORDER &lt;- c(
+  "Brasil",
+  "Norte", "Rondônia", "Acre", "Amazonas", "Roraima",
+  "Pará", "Amapá", "Tocantins",
+  "Nordeste", "Maranhão", "Piauí", "Ceará", "Rio Grande do Norte",
+  "Paraíba", "Pernambuco", "Alagoas", "Sergipe", "Bahia",
+  "Sudeste", "Minas Gerais", "Espírito Santo", "Rio de Janeiro", "São Paulo",
+  "Sul", "Paraná", "Santa Catarina", "Rio Grande do Sul",
+  "Centro-Oeste", "Mato Grosso do Sul", "Mato Grosso", "Goiás", "Distrito Federal"
+)
+
+VARIAVEL_LABEL &lt;- c(
+  pib_nominal       = "PIB Nominal (R$ milhões)",
+  vab_nominal_total = "VAB Nominal Total (R$ milhões)",
+  impostos_nominal  = "Impostos Líquidos de Subsídios (R$ milhões)",
+  idx_vol_pib       = "PIB Real — Índice Acumulado (base 100 = 2002)",
+  idx_deflator      = "Deflator Implícito — Índice Acumulado (base 100 = 2002)"
+)
+
+MACRO_LABEL &lt;- c(
+  agropecuaria = "Agropecuária",
+  industria    = "Indústria",
+  adm_publica  = "Adm. Pública",
+  servicos     = "Serviços"
+)
+
+ATIVIDADE_LABEL &lt;- c(
+  agropecuaria           = "Agropecuária",
+  ind_extrativa          = "Ind. Extrativas",
+  ind_transformacao      = "Ind. de Transformação",
+  eletricidade_gas_agua  = "Eletricidade/Gás/Água",
+  construcao             = "Construção",
+  comercio_veiculos      = "Comércio e Veículos",
+  transporte_armazenagem = "Transporte e Armazenagem",
+  informacao_comunicacao = "Informação e Comunicação",
+  financeiro_seguros     = "Financeiro e Seguros",
+  imobiliaria            = "Atividades Imobiliárias",
+  adm_publica            = "Adm. Pública",
+  outros_servicos        = "Outros Serviços"
+)
+
+PALETA_MACRO &lt;- c(
+  agropecuaria = "#2E8B57",
+  industria    = "#E67E22",
+  adm_publica  = "#8E44AD",
+  servicos     = "#2980B9"
+)
+
+PALETA_ATIV &lt;- setNames(
+  c("#A6CEE3","#1F78B4","#B2DF8A","#33A02C",
+    "#FB9A99","#E31A1C","#FDBF6F","#FF7F00",
+    "#CAB2D6","#6A3D9A","#FFFF99","#B15928"),
+  names(ATIVIDADE_LABEL)
+)
+
+COR_HIST  &lt;- "#1F497D"
+COR_PROJ  &lt;- "#C0392B"
+COR_RIBBN &lt;- "#C0392B"
+
+tema_base &lt;- theme_minimal(base_size = 14) +
+  theme(
+    plot.title       = element_text(face = "bold", size = 15),
+    plot.subtitle    = element_text(colour = "grey40", size = 12),
+    plot.caption     = element_text(colour = "grey55", size = 10),
+    panel.grid.minor = element_blank(),
+    legend.position  = "bottom",
+    legend.text      = element_text(size = 12),
+    strip.text       = element_text(face = "bold", size = 12),
+    axis.text        = element_text(size = 12),
+    axis.title       = element_text(size = 13)
+  )
+
+vl &lt;- geom_vline(xintercept = ANO_HIST_FIM + 0.5,
+                 linetype = "dashed", colour = "grey55", linewidth = 0.4)
+
+eh_indice &lt;- function(var) var %in% c("idx_vol_pib", "idx_deflator")
+
+camada_base_100 &lt;- function(var) {
+  if (eh_indice(var)) {
+    return(
+      geom_hline(
+        yintercept = 100,
+        colour = "grey70",
+        linewidth = 0.3,
+        linetype = "dotted"
+      )
+    )
+  }
+
+  geom_blank()
+}
+
+formato_y &lt;- function(var) {
+  if (eh_indice(var))
+    scale_y_continuous(labels = label_number(accuracy = 0.1, decimal.mark = ",",
+                                             big.mark = "."))
+  else
+    scale_y_continuous(labels = label_number(big.mark = ".", decimal.mark = ",",
+                                             accuracy = 1, scale = 1e-3,
+                                             suffix = " bi"))
+}
+
+BASE_URL &lt;- "../data"
+
+# ==============================================================================
+# UI
+# ==============================================================================
+
+ui &lt;- page_sidebar(
+  title = "Painel de Projeções dos PIBs Estaduais",
+  theme = bs_theme(preset = "flatly", version = 5),
+
+  # JavaScript: busca CSVs + injeta botão sol/lua na navbar
+  tags$head(tags$style(HTML('
+    /* ── Modo claro: abas em cinza/preto ── */
+    .nav-tabs .nav-link,
+    .card-header-tabs .nav-link,
+    .bslib-card .nav-tabs .nav-link {
+      color: #555555 !important;
+    }
+    .nav-tabs .nav-link.active,
+    .card-header-tabs .nav-link.active,
+    .bslib-card .nav-tabs .nav-link.active {
+      color: #111111 !important;
+      font-weight: 600 !important;
+    }
+    .nav-tabs .nav-link:hover,
+    .card-header-tabs .nav-link:hover {
+      color: #222222 !important;
+    }
+    /* Links gerais fora da navbar */
+    a:not([class*="navbar"]):not(.paginate_button) {
+      color: #333333 !important;
+    }
+
+    /* ── Modo escuro: abas em branco/cinza claro ── */
+    body.dark-mode .nav-tabs .nav-link,
+    body.dark-mode .card-header-tabs .nav-link,
+    body.dark-mode .bslib-card .nav-tabs .nav-link {
+      color: #aaaaaa !important;
+    }
+    body.dark-mode .nav-tabs .nav-link.active,
+    body.dark-mode .card-header-tabs .nav-link.active,
+    body.dark-mode .bslib-card .nav-tabs .nav-link.active {
+      color: #ffffff !important;
+      font-weight: 600 !important;
+    }
+    body.dark-mode .nav-tabs .nav-link:hover,
+    body.dark-mode .card-header-tabs .nav-link:hover {
+      color: #dddddd !important;
+    }
+    body.dark-mode a:not([class*="navbar"]):not(.paginate_button) {
+      color: #cccccc !important;
+    }
+  '))),
+  tags$head(tags$script(HTML(paste0('
+    $(document).on("shiny:connected", function() {
+
+      // Busca dados
+      var base = "', BASE_URL, '";
+      Promise.all([
+        fetch(base + "/serie_principal.csv").then(function(r) { return r.text(); }),
+        fetch(base + "/vab_macrossetor.csv").then(function(r) { return r.text(); }),
+        fetch(base + "/vab_atividade.csv").then(function(r) { return r.text(); }),
+        fetch(base + "/diagnostico.csv").then(function(r) { return r.text(); }),
+        fetch(base + "/status_dados.json").then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; })
+      ]).then(function(results) {
+        Shiny.setInputValue("serie_raw",        results[0], {priority: "event"});
+        Shiny.setInputValue("vab_mac_raw",      results[1], {priority: "event"});
+        Shiny.setInputValue("vab_ativ_raw",     results[2], {priority: "event"});
+        Shiny.setInputValue("diagnostico_raw",  results[3], {priority: "event"});
+        Shiny.setInputValue("status_dados_raw", results[4], {priority: "event"});
+      }).catch(function(e) {
+        var msg = (e &amp;&amp; e.message) ? e.message : String(e);
+        Shiny.setInputValue("data_load_error", msg, {priority: "event"});
+      });
+
+      // Botão de tema na navbar
+      var isDark = false;
+      var btn = $(
+        \'&lt;button id="theme-toggle" \' +
+        \'style="background:none;border:none;cursor:pointer;color:#fff;\' +
+        \'font-size:0.85em;letter-spacing:0.04em;padding:0 4px 0 16px;opacity:0.85;"&gt;\' +
+        \'Modo escuro&lt;/button&gt;\'
+      );
+      btn.on("click", function() {
+        isDark = !isDark;
+        $(this).text(isDark ? "Modo claro" : "Modo escuro");
+        document.body.classList.toggle("dark-mode", isDark);
+        Shiny.setInputValue("modo_cor", isDark ? "dark" : "light", {priority: "event"});
+      });
+      $(".navbar").append(btn);
+    });
+  ')))),
+
+  sidebar = sidebar(
+    width = 260,
+    conditionalPanel(
+      "input.abas !== 'Tabela'",
+      selectInput("geo", "Território",
+                  choices  = GEO_ORDER,
+                  selected = "Brasil"),
+      selectInput("variavel", "Variável",
+                  choices  = setNames(names(VARIAVEL_LABEL), VARIAVEL_LABEL),
+                  selected = "pib_nominal"),
+      sliderInput("n_proj", "Anos de projeção exibidos",
+                  min = 1, max = H_PAINEL,
+                  value = H_PAINEL, step = 1, ticks = FALSE)
+    ),
+    conditionalPanel(
+      "input.abas === 'Macrossetor' || input.abas === 'Comparativo'",
+      selectInput("macrossetor", "Macrossetor",
+                  choices  = c("Todos" = "todos",
+                               setNames(names(MACRO_LABEL), MACRO_LABEL)),
+                  selected = "todos")
+    ),
+    conditionalPanel(
+      "input.abas === 'Atividade'",
+      selectInput("atividade", "Atividade",
+                  choices  = c("Todas" = "todas",
+                               setNames(names(ATIVIDADE_LABEL), ATIVIDADE_LABEL)),
+                  selected = "todas")
+    ),
+    conditionalPanel(
+      "input.abas === 'Comparativo'",
+      selectInput("geos_comp", "Territórios a comparar",
+                  choices  = GEO_ORDER,
+                  selected = c("Brasil", "Norte", "Nordeste",
+                               "Sudeste", "Sul", "Centro-Oeste"),
+                  multiple = TRUE)
+    ),
+    conditionalPanel(
+      "input.abas === 'Tabela'",
+      radioButtons("tabela_fonte", "Exibir dados de:",
+        choices = c("Série Principal" = "serie",
+                    "VAB Macrossetor" = "macrossetor",
+                    "VAB Atividade"   = "atividade"),
+        selected = "serie"
+      ),
+      conditionalPanel(
+        "input.abas === 'Tabela' &amp;&amp; input.tabela_fonte === 'serie'",
+        selectInput("tabela_geo", "Território", choices = GEO_ORDER, selected = "Brasil"),
+        selectInput("tabela_var", "Variável",
+          choices = setNames(names(VARIAVEL_LABEL), VARIAVEL_LABEL),
+          selected = "pib_nominal")
+      ),
+      conditionalPanel(
+        "input.abas === 'Tabela' &amp;&amp; input.tabela_fonte === 'macrossetor'",
+        selectInput("tabela_geo_mac", "Território", choices = GEO_ORDER, selected = "Brasil"),
+        selectInput("tabela_mac", "Macrossetor",
+          choices = c("Todos" = "todos", setNames(names(MACRO_LABEL), MACRO_LABEL)),
+          selected = "todos")
+      ),
+      conditionalPanel(
+        "input.abas === 'Tabela' &amp;&amp; input.tabela_fonte === 'atividade'",
+        selectInput("tabela_geo_ativ", "Território", choices = GEO_ORDER, selected = "Brasil"),
+        selectInput("tabela_ativ", "Atividade",
+          choices = c("Todas" = "todas", setNames(names(ATIVIDADE_LABEL), ATIVIDADE_LABEL)),
+          selected = "todas")
+      )
+    ),
+    tags$div(
+      style = "margin-top: 24px; padding-top: 14px; border-top: 1px solid #e0e0e0; text-align: center;",
+      tags$a(
+        href = "../metodologia.html", target = "_blank",
+        style = paste(
+          "display: inline-block; font-size: 0.82em; color: #333;",
+          "text-decoration: none; border-bottom: 1px solid #aaa;",
+          "padding-bottom: 1px; letter-spacing: 0.02em;"
+        ),
+        "Nota Metodológica"
+      ),
+      tags$br(),
+      tags$a(
+        href = "../data/tabela_painel.xlsx", download = NA,
+        style = paste(
+          "display: inline-block; margin-top: 8px; font-size: 0.82em; color: #333;",
+          "text-decoration: none; border-bottom: 1px solid #aaa;",
+          "padding-bottom: 1px; letter-spacing: 0.02em;"
+        ),
+        "Download da Tabela das Proje\u00e7\u00f5es"
+      )
+    )
+  ),
+
+  tags$div(
+    id = "rodape-painel",
+    style = paste(
+      "position:fixed; bottom:0; left:0; right:0; z-index:999;",
+      "background:#f5f5f5; border-top:1px solid #ddd;",
+      "padding:8px 20px; display:flex; justify-content:space-between;",
+      "align-items:center; font-size:0.76em; color:#111; line-height:1.3;"
+    ),
+    tags$div(
+      style = "display:flex; flex-direction:column; gap:2px;",
+      uiOutput("status_dados_txt"),
+      tags$span(
+        "Fonte: IBGE Contas Regionais (2002\u20132023). Projeções próprias com reconciliação top-down (2024\u20132026)."
+      )
+    ),
+    tags$span(
+      style = "text-align:right;",
+      tags$span(style = "color:#555; text-transform:uppercase; letter-spacing:0.05em; margin-right:5px;", "Autor:"),
+      tags$strong(style = "color:#000;", "Yuri Cesar de Lima e Silva"),
+      tags$span(style = "color:#999; margin:0 5px;", "·"),
+      "Analista de Planejamento e Orçamento",
+      tags$span(style = "color:#999; margin:0 5px;", "·"),
+      "Chefe da Divisão de Estudos e Análises Sociais",
+      tags$span(style = "color:#999; margin:0 5px;", "·"),
+      "CGEES/SEPLAN-RR"
+    )
+  ),
+
+  navset_card_tab(
+    id = "abas",
+
+    nav_panel("Série Histórica",
+      card(full_screen = TRUE,
+        card_header(textOutput("titulo_serie")),
+        plotOutput("plot_serie", height = "500px"))
+    ),
+    nav_panel("Macrossetor",
+      card(full_screen = TRUE,
+        card_header("VAB por Macrossetor"),
+        plotOutput("plot_macro", height = "500px"))
+    ),
+    nav_panel("Atividade",
+      card(full_screen = TRUE,
+        card_header("VAB por Atividade Econômica"),
+        plotOutput("plot_ativ", height = "500px"))
+    ),
+    nav_panel("Comparativo",
+      card(full_screen = TRUE,
+        card_header(textOutput("titulo_comp")),
+        plotOutput("plot_comp", height = "500px"))
+    ),
+    nav_panel("Tabela",
+      card(full_screen = TRUE,
+        card_header("Dados numéricos"),
+        DTOutput("tabela_dados"))
+    ),
+    nav_panel("Diagnóstico",
+      card(full_screen = TRUE,
+        card_header("Diagnóstico — seleção de modelos e métricas de validação cruzada (1.089 séries)"),
+        tags$div(
+          style = "display:flex; gap:12px; flex-wrap:wrap; padding:8px 4px 2px; align-items:flex-end;",
+          tags$div(style = "min-width:200px; flex:2;",
+            selectInput("diag_geo", "Território:",
+              choices = c("Todos" = "todos", GEO_ORDER),
+              selected = "todos", width = "100%")),
+          tags$div(style = "min-width:140px; flex:1;",
+            selectInput("diag_tipo", "Tipo de série:",
+              choices = c("Todos" = "todos",
+                          "Macrossetor" = "Macrossetor",
+                          "Atividade"   = "Atividade",
+                          "Impostos"    = "Impostos"),
+              selected = "todos", width = "100%")),
+          tags$div(style = "min-width:130px; flex:1;",
+            selectInput("diag_modelo", "Modelo:",
+              choices = c("Todos" = "todos",
+                          "RW", "ARMA", "ARIMA", "ETS", "ETS-A", "THETA", "SSM"),
+              selected = "todos", width = "100%")),
+          tags$div(style = "padding-bottom:6px;",
+            checkboxInput("diag_fallback", "Somente fallback", value = FALSE))
+        ),
+        DTOutput("tabela_diagnostico"))
+    )
+  )
+)
+
+# ==============================================================================
+# Server
+# ==============================================================================
+
+server &lt;- function(input, output, session) {
+
+  # ---- Autenticação -----------------------------------------------------------
+  autenticado &lt;- reactiveVal(FALSE)
+
+  modal_login &lt;- function(erro = FALSE) {
+    modalDialog(
+      title = tags$div(
+        style = "text-align:center; font-size:1.1em; font-weight:600;",
+        "Projeções do PIB Estadual — SEPLAN-RR"
+      ),
+      tags$div(
+        style = "text-align:center; padding:4px 0 12px;",
+        tags$p(
+          style = "color:#666; font-size:0.9em; margin-bottom:20px;",
+          "Painel em análise. Acesso restrito."
+        ),
+        passwordInput("senha_input", label = NULL,
+                      placeholder = "Senha", width = "100%"),
+        if (erro) tags$p(
+          style = "color:#c0392b; font-size:0.85em; margin-top:6px;",
+          "Senha incorreta. Tente novamente."
+        )
+      ),
+      footer = tags$div(
+        style = "text-align:center;",
+        actionButton("btn_entrar", "Entrar",
+                     class = "btn-primary",
+                     style = "min-width:120px;")
+      ),
+      tags$script(HTML(
+        "$(document).off('keydown.login').on('keydown.login', function(e){",
+        "  if(e.key==='Enter'&amp;&amp;$('#senha_input').is(':visible')){$('#btn_entrar').click();}",
+        "});"
+      )),
+      easyClose = FALSE,
+      size = "s"
+    )
+  }
+
+  observe({
+    if (!autenticado()) showModal(modal_login())
+  })
+
+  observeEvent(input$btn_entrar, {
+    if (identical(input$senha_input, SENHA_PAINEL)) {
+      autenticado(TRUE)
+      removeModal()
+    } else {
+      showModal(modal_login(erro = TRUE))
+    }
+  }, ignoreInit = TRUE)
+
+  observeEvent(input$data_load_error, {
+    showNotification(
+      paste("Falha ao carregar os dados do painel:", input$data_load_error),
+      type = "error",
+      duration = NULL
+    )
+  })
+
+  # Tema dia/noite
+  observe({
+    session$setCurrentTheme(
+      if (isTRUE(input$modo_cor == "dark"))
+        bs_theme(preset = "darkly", version = 5)
+      else
+        bs_theme(preset = "flatly", version = 5)
+    )
+  })
+
+  # Dados: carregados via JS fetch -&gt; input$*_raw -&gt; read.csv(textConnection())
+  serie &lt;- reactive({
+    req(input$serie_raw)
+    read.csv(textConnection(input$serie_raw), na.strings = "")
+  })
+  vab_mac &lt;- reactive({
+    req(input$vab_mac_raw)
+    read.csv(textConnection(input$vab_mac_raw), na.strings = "")
+  })
+  vab_ativ &lt;- reactive({
+    req(input$vab_ativ_raw)
+    read.csv(textConnection(input$vab_ativ_raw), na.strings = "")
+  })
+  diagnostico_df &lt;- reactive({
+    req(input$diagnostico_raw)
+    read.csv(textConnection(input$diagnostico_raw), na.strings = "")
+  })
+
+  ano_max &lt;- reactive({
+    n_proj &lt;- input$n_proj
+    if (is.null(n_proj) || is.na(n_proj)) {
+      n_proj &lt;- H_PAINEL
+    }
+    ANO_HIST_FIM + as.integer(n_proj)
+  })
+
+  # Dados filtrados
+  dados_serie &lt;- reactive({
+    req(serie())
+    serie() |&gt;
+      filter(geo == input$geo, variavel == input$variavel,
+             ano &lt;= ano_max()) |&gt;
+      mutate(tipo = factor(tipo, levels = c("Histórico", "Projetado")))
+  })
+
+  # ---- Aba 1: Série Histórica + Projeção ------------------------------------
+  output$titulo_serie &lt;- renderText({
+    paste0(VARIAVEL_LABEL[input$variavel], " — ", input$geo)
+  })
+
+  output$plot_serie &lt;- renderPlot({
+      df &lt;- dados_serie()
+
+      shiny::validate(shiny::need(nrow(df) &gt; 0, "Sem dados para a combinação selecionada."))
+
+      unidade  &lt;- if (eh_indice(input$variavel)) "Índice (2002 = 100)" else "R$ bilhões"
+
+      ggplot(df, aes(x = ano)) +
+        geom_ribbon(
+          aes(ymin = lo95, ymax = hi95),
+          data = \(d) filter(d, tipo == "Projetado", !is.na(lo95)),
+          fill = COR_RIBBN, alpha = 0.20
+        ) +
+        vl +
+        camada_base_100(input$variavel) +
+        geom_line(aes(y = valor, colour = tipo), linewidth = 1.1) +
+        geom_point(aes(y = valor, colour = tipo), size = 2.0) +
+        scale_colour_manual(
+          values = c(Histórico = COR_HIST, Projetado = COR_PROJ), name = ""
+        ) +
+        scale_x_continuous(breaks = seq(2002, ANO_PROJ_FIM, 3)) +
+        formato_y(input$variavel) +
+        labs(title    = paste0(VARIAVEL_LABEL[input$variavel], " — ", input$geo),
+             subtitle = paste0("Histórico 2002–", ANO_HIST_FIM,
+                               " + Projeção ", ANO_HIST_FIM + 1L, "–", ano_max(),
+                               " com IC 95%"),
+             x = "", y = unidade,
+             caption = "Fonte: IBGE (histórico); projeção própria.") +
+        tema_base
+  })
+
+  # ---- Aba 2: VAB Macrossetor -----------------------------------------------
+  output$plot_macro &lt;- renderPlot({
+      df &lt;- vab_mac() |&gt;
+        filter(geo == input$geo, ano &lt;= ano_max()) |&gt;
+        mutate(
+          tipo      = factor(tipo, levels = c("Histórico", "Projetado")),
+          mac_label = coalesce(MACRO_LABEL[macrossetor], macrossetor)
+        )
+
+      if (input$macrossetor != "todos")
+        df &lt;- df |&gt; filter(macrossetor == input$macrossetor)
+
+      shiny::validate(shiny::need(nrow(df) &gt; 0, "Sem dados para o macrossetor selecionado."))
+
+      if (input$macrossetor == "todos") {
+        ggplot(df, aes(x = ano, fill = mac_label, colour = mac_label)) +
+          geom_area(data = \(d) filter(d, tipo == "Histórico"),
+                    aes(y = vab_nominal / 1e3), position = "stack", alpha = 0.70) +
+          geom_area(data = \(d) filter(d, tipo == "Projetado"),
+                    aes(y = vab_nominal / 1e3), position = "stack", alpha = 0.35) +
+          vl +
+          scale_fill_manual(values = PALETA_MACRO, name = "") +
+          scale_colour_manual(values = PALETA_MACRO, name = "") +
+          scale_x_continuous(breaks = seq(2002, ANO_PROJ_FIM, 3)) +
+          scale_y_continuous(labels = label_number(big.mark = ".", decimal.mark = ",",
+                                                    accuracy = 1, suffix = " bi", scale = 1)) +
+          labs(title    = paste0("VAB por Macrossetor — ", input$geo),
+               subtitle = "R$ bilhões (correntes) | empilhado; sombreado = projetado",
+               x = "", y = "R$ bilhões",
+               caption = "Fonte: IBGE (histórico); projeção própria.") +
+          tema_base
+      } else {
+        ggplot(df, aes(x = ano)) +
+          geom_ribbon(aes(ymin = vab_lo95 / 1e3, ymax = vab_hi95 / 1e3),
+                      data = \(d) filter(d, tipo == "Projetado", !is.na(vab_lo95)),
+                      fill = COR_RIBBN, alpha = 0.20) +
+          vl +
+          geom_line(aes(y = vab_nominal / 1e3, colour = tipo), linewidth = 1.1) +
+          geom_point(aes(y = vab_nominal / 1e3, colour = tipo), size = 2.0) +
+          scale_colour_manual(values = c(Histórico = COR_HIST, Projetado = COR_PROJ), name = "") +
+          scale_x_continuous(breaks = seq(2002, ANO_PROJ_FIM, 3)) +
+          scale_y_continuous(labels = label_number(big.mark = ".", decimal.mark = ",",
+                                                    accuracy = 0.1, suffix = " bi")) +
+          labs(title    = paste0("VAB — ", MACRO_LABEL[input$macrossetor], " — ", input$geo),
+               subtitle = "R$ bilhões (correntes) | IC 95% no período projetado",
+               x = "", y = "R$ bilhões",
+               caption = "Fonte: IBGE (histórico); projeção própria.") +
+          tema_base
+      }
+  })
+
+  # ---- Aba 3: VAB Atividade -------------------------------------------------
+  output$plot_ativ &lt;- renderPlot({
+      df &lt;- vab_ativ() |&gt;
+        filter(geo == input$geo, ano &lt;= ano_max()) |&gt;
+        mutate(
+          tipo       = factor(tipo, levels = c("Histórico", "Projetado")),
+          ativ_label = coalesce(ATIVIDADE_LABEL[atividade], atividade)
+        )
+
+      if (input$atividade != "todas")
+        df &lt;- df |&gt; filter(atividade == input$atividade)
+
+      shiny::validate(shiny::need(nrow(df) &gt; 0, "Sem dados para a atividade selecionada."))
+
+      if (input$atividade == "todas") {
+        ggplot(df, aes(x = ano, fill = ativ_label, colour = ativ_label)) +
+          geom_area(data = \(d) filter(d, tipo == "Histórico"),
+                    aes(y = vab_nominal / 1e3), position = "stack", alpha = 0.80) +
+          geom_area(data = \(d) filter(d, tipo == "Projetado"),
+                    aes(y = vab_nominal / 1e3), position = "stack", alpha = 0.40) +
+          vl +
+          scale_fill_manual(values = PALETA_ATIV, name = "") +
+          scale_colour_manual(values = PALETA_ATIV, name = "") +
+          scale_x_continuous(breaks = seq(2002, ANO_PROJ_FIM, 3)) +
+          scale_y_continuous(labels = label_number(big.mark = ".", decimal.mark = ",",
+                                                    accuracy = 1, suffix = " bi", scale = 1)) +
+          labs(title    = paste0("VAB por Atividade — ", input$geo),
+               subtitle = "R$ bilhões (correntes) | empilhado; sombreado = projetado",
+               x = "", y = "R$ bilhões",
+               caption = "Fonte: IBGE (histórico); projeção própria.") +
+          tema_base +
+          theme(legend.text = element_text(size = 7), legend.key.size = unit(0.4, "cm"))
+      } else {
+        ggplot(df, aes(x = ano)) +
+          geom_ribbon(aes(ymin = vab_lo95 / 1e3, ymax = vab_hi95 / 1e3),
+                      data = \(d) filter(d, tipo == "Projetado", !is.na(vab_lo95)),
+                      fill = COR_RIBBN, alpha = 0.20) +
+          vl +
+          geom_line(aes(y = vab_nominal / 1e3, colour = tipo), linewidth = 1.1) +
+          geom_point(aes(y = vab_nominal / 1e3, colour = tipo), size = 2.0) +
+          scale_colour_manual(values = c(Histórico = COR_HIST, Projetado = COR_PROJ), name = "") +
+          scale_x_continuous(breaks = seq(2002, ANO_PROJ_FIM, 3)) +
+          scale_y_continuous(labels = label_number(big.mark = ".", decimal.mark = ",",
+                                                    accuracy = 0.1, suffix = " bi")) +
+          labs(title    = paste0("VAB — ", ATIVIDADE_LABEL[input$atividade], " — ", input$geo),
+               subtitle = "R$ bilhões (correntes) | IC 95% no período projetado",
+               x = "", y = "R$ bilhões",
+               caption = "Fonte: IBGE (histórico); projeção própria.") +
+          tema_base
+      }
+  })
+
+  # ---- Aba 4: Comparativo ---------------------------------------------------
+  output$titulo_comp &lt;- renderText({
+    paste0("Comparativo — ", VARIAVEL_LABEL[input$variavel])
+  })
+
+  output$plot_comp &lt;- renderPlot({
+      shiny::validate(shiny::need(length(input$geos_comp) &gt;= 1, "Selecione ao menos um território."))
+      df &lt;- serie() |&gt;
+        filter(geo %in% input$geos_comp, variavel == input$variavel,
+               ano &lt;= ano_max()) |&gt;
+        mutate(tipo = factor(tipo, levels = c("Histórico", "Projetado")))
+
+      shiny::validate(shiny::need(nrow(df) &gt; 0, "Sem dados para a combinação selecionada."))
+
+      unidade &lt;- if (eh_indice(input$variavel)) "Índice (2002 = 100)" else "R$ bilhões"
+
+      ggplot(df, aes(x = ano, y = valor, colour = geo, linetype = tipo)) +
+        vl +
+        camada_base_100(input$variavel) +
+        geom_line(linewidth = 0.9) +
+        scale_linetype_manual(values = c(Histórico = "solid", Projetado = "dashed"), name = "") +
+        scale_colour_brewer(palette = "Set2", name = "") +
+        scale_x_continuous(breaks = seq(2002, ANO_PROJ_FIM, 3)) +
+        { if (!eh_indice(input$variavel))
+            scale_y_continuous(labels = label_number(big.mark = ".", decimal.mark = ",",
+                                                      accuracy = 1, scale = 1e-3, suffix = " bi"))
+          else
+            scale_y_continuous(labels = label_number(suffix = "%", accuracy = 0.1, decimal.mark = ","))
+        } +
+        labs(title    = paste0(VARIAVEL_LABEL[input$variavel], " — Comparativo"),
+             subtitle = paste0("Histórico 2002–", ANO_HIST_FIM,
+                               " (contínuo) + Projeção ", ANO_HIST_FIM + 1L, "–", ano_max(),
+                               " (tracejado)"),
+             x = "", y = unidade,
+             caption = "Fonte: IBGE (histórico); projeção própria.") +
+        tema_base
+  })
+
+  # ---- Aba 5: Tabela --------------------------------------------------------
+  output$tabela_dados &lt;- renderDT({
+    lbl_valor &lt;- if (eh_indice(input$tabela_var)) "Índice (base 100 = 2002)" else "Valor (R$ milhões)"
+
+    df &lt;- if (input$tabela_fonte == "serie") {
+      serie() |&gt;
+        filter(geo == input$tabela_geo, variavel == input$tabela_var,
+               ano &lt;= ano_max()) |&gt;
+        transmute(
+          Território = geo, Tipo = tipo, Ano = ano,
+          Variável   = coalesce(VARIAVEL_LABEL[variavel], variavel),
+          !!lbl_valor := round(valor, 2),
+          `Limite inferior (IC 95%)` = round(lo95, 2),
+          `Limite superior (IC 95%)` = round(hi95, 2)
+        )
+    } else if (input$tabela_fonte == "macrossetor") {
+      d &lt;- vab_mac() |&gt;
+        filter(geo == input$tabela_geo_mac, ano &lt;= ano_max())
+      if (input$tabela_mac != "todos")
+        d &lt;- d |&gt; filter(macrossetor == input$tabela_mac)
+      d |&gt; transmute(
+        Território  = geo, Tipo = tipo, Ano = ano,
+        Macrossetor = coalesce(MACRO_LABEL[macrossetor], macrossetor),
+        `VAB Nominal (R$ milhões)` = round(vab_nominal, 1),
+        `Limite inferior (IC 95%)` = round(vab_lo95, 1),
+        `Limite superior (IC 95%)` = round(vab_hi95, 1)
+      )
+    } else {
+      d &lt;- vab_ativ() |&gt;
+        filter(geo == input$tabela_geo_ativ, ano &lt;= ano_max())
+      if (input$tabela_ativ != "todas")
+        d &lt;- d |&gt; filter(atividade == input$tabela_ativ)
+      d |&gt; transmute(
+        Território  = geo, Tipo = tipo, Ano = ano,
+        Macrossetor = coalesce(MACRO_LABEL[macrossetor], macrossetor),
+        Atividade   = coalesce(ATIVIDADE_LABEL[atividade], atividade),
+        `VAB Nominal (R$ milhões)` = round(vab_nominal, 1),
+        `Limite inferior (IC 95%)` = round(vab_lo95, 1),
+        `Limite superior (IC 95%)` = round(vab_hi95, 1)
+      )
+    }
+
+    # Formatar colunas numéricas no padrão brasileiro (NA → vazio)
+    fmt_br &lt;- function(x, dec = 2)
+      ifelse(is.na(x), "",
+             formatC(x, format = "f", digits = dec, big.mark = ".", decimal.mark = ",",
+                     big.interval = 3L))
+
+    num_cols &lt;- setdiff(names(df)[sapply(df, is.numeric)], "Ano")
+    for (col in num_cols)
+      df[[col]] &lt;- fmt_br(df[[col]])
+
+    datatable(df,
+      options = list(paging = FALSE, scrollX = TRUE, scrollY = "480px",
+                     dom = "t",
+                     columnDefs = list(list(className = "dt-right", targets = "_all"))),
+      rownames = FALSE)
+  })
+
+  # ---- Status de dados (footer) -----------------------------------------------
+  output$status_dados_txt &lt;- renderUI({
+    s &lt;- input$status_dados_raw
+    if (is.null(s) || identical(s, "")) {
+      return(tags$span(
+        paste0("Dados: ", ANO_HIST_INI, "\u2013", ANO_HIST_FIM),
+        style = "color:#999; font-size:0.9em;"
+      ))
+    }
+    codigo &lt;- s$codigo_erro
+    if (!is.null(codigo) &amp;&amp; !is.na(codigo) &amp;&amp; nchar(codigo) &gt; 0) {
+      tags$span(
+        paste0("Aviso: dados desatualizados (", codigo, ")"),
+        style = "color:#c0392b; font-weight:600; font-size:0.9em;"
+      )
+    } else {
+      tags$span(
+        paste0("Dados: ", s$ano_ini, "\u2013", s$ano_fim,
+               " \u00b7 atualizado em ", s$data_download),
+        style = "color:#999; font-size:0.9em;"
+      )
+    }
+  })
+
+  # ---- Aba Diagnóstico ---------------------------------------------------------
+  output$tabela_diagnostico &lt;- renderDT({
+    VARIAVEL_DIAG_LABEL &lt;- c(
+      idx_volume   = "Volume",
+      idx_preco    = "Preço",
+      log_impostos = "Impostos"
+    )
+
+    d &lt;- diagnostico_df()
+
+    # Filtros próprios da aba
+    if (!is.null(input$diag_geo)     &amp;&amp; input$diag_geo     != "todos")
+      d &lt;- d |&gt; filter(geo        == input$diag_geo)
+    if (!is.null(input$diag_tipo)    &amp;&amp; input$diag_tipo    != "todos")
+      d &lt;- d |&gt; filter(serie_tipo == input$diag_tipo)
+    if (!is.null(input$diag_modelo)  &amp;&amp; input$diag_modelo  != "todos")
+      d &lt;- d |&gt; filter(modelo     == input$diag_modelo)
+    if (isTRUE(input$diag_fallback))
+      d &lt;- d |&gt; filter(fallback   == TRUE)
+
+    d &lt;- d |&gt;
+      mutate(
+        across(c(mase_ponderado, mase_h1, mase_h2, mase_h3), ~ round(.x, 3)),
+        variavel    = coalesce(VARIAVEL_DIAG_LABEL[variavel], variavel),
+        macrossetor = coalesce(MACRO_LABEL[macrossetor], macrossetor),
+        atividade   = coalesce(ATIVIDADE_LABEL[atividade], atividade),
+        fallback    = if_else(fallback, "Sim", "\u2014")
+      ) |&gt;
+      select(
+        `Território`  = geo,
+        `Tipo`        = serie_tipo,
+        `Macrossetor` = macrossetor,
+        `Atividade`   = atividade,
+        `Variável`    = variavel,
+        `Modelo`      = modelo,
+        `MASE pond.`  = mase_ponderado,
+        `MASE h=1`    = mase_h1,
+        `MASE h=2`    = mase_h2,
+        `MASE h=3`    = mase_h3,
+        `Fallback`    = fallback
+      )
+
+    datatable(d,
+      rownames = FALSE,
+      options  = list(
+        paging   = FALSE,
+        scrollY  = "500px",
+        scrollX  = TRUE,
+        dom      = "frti",
+        language = list(
+          search       = "Buscar:",
+          info         = "Mostrando _TOTAL_ s\u00e9ries",
+          infoFiltered = "(filtrado de _MAX_ s\u00e9ries)"
+        )
+      )
+    )
+  })
+}
+
+shinyApp(ui, server)</code></pre>
+</div>
+<bslib-tooltip placement="auto" bsoptions="[]" data-require-bs-version="5" data-require-bs-caller="tooltip()">
+    <template>Expand</template>
+    <span class="bslib-full-screen-enter badge rounded-pill">
+        <svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 24 24" style="height:1em;width:1em;" aria-hidden="true" role="img"><path d="M20 5C20 4.4 19.6 4 19 4H13C12.4 4 12 3.6 12 3C12 2.4 12.4 2 13 2H21C21.6 2 22 2.4 22 3V11C22 11.6 21.6 12 21 12C20.4 12 20 11.6 20 11V5ZM4 19C4 19.6 4.4 20 5 20H11C11.6 20 12 20.4 12 21C12 21.6 11.6 22 11 22H3C2.4 22 2 21.6 2 21V13C2 12.4 2.4 12 3 12C3.6 12 4 12.4 4 13V19Z"></path></svg>
+    </span>
+</bslib-tooltip><script data-bslib-card-init="">bslib.Card.initializeAllCards();</script></div>
+<div id="3ade8a4a-fb1d-4a6c-8409-ac45482d5fc9" class="hidden">
+
+</div>
+</div>
+
+
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /container fluid -->
+
+<script type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (_event) {
+  if (window.bslib.Card) {
+    window.bslib.Card.initializeAllCards();
+  }
+}); 
+</script>
+  
+
+
+
+</body></html>
