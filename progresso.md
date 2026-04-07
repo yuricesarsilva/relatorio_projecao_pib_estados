@@ -379,6 +379,165 @@ O diretório `_extensions/` gerado deve ser commitado junto com o painel.
 
 ---
 
+## Etapa 12 â€” Bloco 1 da reforma: preservaÃ§Ã£o e baseline
+
+**O que foi feito:**
+- Criada a tag `v1.0-painel-atual` como ponto de restauraÃ§Ã£o da versÃ£o anterior Ã  reforma.
+- Criada a branch `reforma-pipeline-univariado` para concentrar a execuÃ§Ã£o da reforma fora da linha principal.
+- Criado `baseline_reforma.md` para documentar o baseline preservado, incluindo:
+  - commit de referÃªncia;
+  - comandos de restauraÃ§Ã£o;
+  - descriÃ§Ã£o funcional do estado atual;
+  - inventÃ¡rio dos CSVs versionados do painel com linhas e hashes SHA-256.
+- Atualizado `checklist_reforma.md`, marcando o **Bloco 1** como concluÃ­do.
+- Atualizado `CLAUDE.md` para incluir a regra permanente de manter `checklist_reforma.md`
+  sincronizado sempre que a alteraÃ§Ã£o fizer parte da reforma.
+
+**Arquivos criados:** `baseline_reforma.md`
+**Arquivos modificados:** `CLAUDE.md`, `checklist_reforma.md`
+
+**Baseline preservado:**
+
+| ReferÃªncia | Valor |
+|-----------|-------|
+| Commit-base | `cb2b4b675eefc7cd9223211897de14e13e3377fa` |
+| Tag | `v1.0-painel-atual` |
+| Branch de reforma | `reforma-pipeline-univariado` |
+
+**CSVs preservados do painel:**
+
+| Arquivo | Linhas |
+|---------|--------|
+| `painel/data/serie_principal.csv` | 4.950 |
+| `painel/data/vab_macrossetor.csv` | 3.960 |
+| `painel/data/vab_atividade.csv` | 11.880 |
+
+---
+
+## Etapa 13 â€” Bloco 2 da reforma: infraestrutura obrigatÃ³ria
+
+**O que foi feito:**
+- Inicializado `renv` no projeto, com geraÃ§Ã£o de:
+  - `.Rprofile`
+  - `renv/activate.R`
+  - `renv/settings.json`
+  - `renv.lock`
+- Hidratada a biblioteca do `renv` a partir dos pacotes jÃ¡ disponÃ­veis no ambiente local.
+- Validado o estado do ambiente com `renv::status()`, retornando projeto consistente.
+- Criado `R/config.R` para centralizar:
+  - anos histÃ³ricos e de projeÃ§Ã£o;
+  - horizonte de projeÃ§Ã£o;
+  - `MIN_TRAIN`;
+  - `SEED_GLOBAL`;
+  - versÃ£o-alvo do R;
+  - tolerÃ¢ncias base;
+  - caminhos de log e cache.
+- Criado `R/utils_cache.R` com funÃ§Ãµes de:
+  - hash de arquivo;
+  - hash de objeto R;
+  - criaÃ§Ã£o de metadata de cache;
+  - validaÃ§Ã£o de cache;
+  - gravaÃ§Ã£o do cache com metadata.
+- Criado `R/utils_logging.R` com funÃ§Ãµes para:
+  - identificar branch e commit;
+  - iniciar log estruturado da execuÃ§Ã£o;
+  - registrar eventos;
+  - salvar logs em `output/logs/`.
+
+**AlteraÃ§Ãµes no pipeline:**
+- `R/run_all.R`
+  - passou a carregar `R/config.R` e `R/utils_logging.R`;
+  - define `set.seed(SEED_GLOBAL)` no inÃ­cio;
+  - registra branch, commit, seed e versÃ£o do R;
+  - grava inÃ­cio/fim de cada script e falhas de execuÃ§Ã£o.
+- `R/03_projecao.R`
+  - removeu instalaÃ§Ã£o automÃ¡tica de `prophet`;
+  - passou a usar `R/config.R`, `R/utils_cache.R` e `R/utils_logging.R`;
+  - trocou o cache manual por cache validado por metadata/hashes;
+  - passou a registrar warnings, erros e fallbacks na modelagem final.
+- `R/05_output.R`
+  - removeu instalaÃ§Ãµes em tempo de execuÃ§Ã£o de `openxlsx` e `RColorBrewer`;
+  - passou a usar constantes centralizadas de `R/config.R`.
+- `R/02_consistencia.R`, `R/04_reconciliacao.R` e `R/06_exportar_painel.R`
+  - passaram a carregar `R/config.R`.
+
+**AlteraÃ§Ã£o no workflow:**
+- `.github/workflows/publish-painel.yml`
+  - fixado `R 4.4.0`;
+  - removida instalaÃ§Ã£o manual de pacotes;
+  - adicionada restauraÃ§Ã£o do ambiente com `r-lib/actions/setup-renv@v2`.
+
+**ValidaÃ§Ãµes realizadas:**
+- `renv::status()` â€” projeto consistente.
+- `parse()` de todos os scripts alterados â€” `parse_ok`.
+- teste sintÃ©tico dos utilitÃ¡rios de cache e logging â€” `utils_ok`.
+
+**Arquivos criados:** `.Rprofile`, `renv.lock`, `renv/activate.R`, `renv/settings.json`, `R/config.R`, `R/utils_cache.R`, `R/utils_logging.R`
+**Arquivos modificados:** `R/run_all.R`, `R/02_consistencia.R`, `R/03_projecao.R`, `R/04_reconciliacao.R`, `R/05_output.R`, `R/06_exportar_painel.R`, `.github/workflows/publish-painel.yml`, `checklist_reforma.md`
+
+---
+
+## Etapa 14 â€” Bloco 3 da reforma: QA bloqueante e governanÃ§a do horizonte
+
+**O que foi feito:**
+- Reformulado `R/02_consistencia.R` para gerar um objeto `qa_status` com:
+  - tabela de checagens;
+  - desvio mÃ¡ximo por regra;
+  - tolerÃ¢ncia por regra;
+  - severidade (`fatal` ou `warning`);
+  - status final `ok`.
+- Classificadas como **fatais** as checagens de:
+  - identidade `PIB = VAB + impostos`;
+  - agregaÃ§Ã£o estados = regiÃ£o;
+  - agregaÃ§Ã£o regiÃµes = Brasil.
+- Mantidas como **warnings monitorados**:
+  - soma das atividades = VAB total;
+  - consistÃªncia dos impostos SIDRA.
+- Ajustadas as tolerÃ¢ncias em `R/config.R` para evitar bloqueio por ruÃ­do numÃ©rico microscÃ³pico.
+- Atualizado `R/run_all.R` para interromper o pipeline automaticamente quando `qa_status$ok == FALSE` apÃ³s `R/02_consistencia.R`.
+
+**GovernanÃ§a do horizonte:**
+- Definidos em `R/config.R`:
+  - `ANO_OPERACIONAL_FIM = 2027`
+  - `ANO_EXPLORATORIO_INI = 2028`
+- Atualizado `R/06_exportar_painel.R` para exportar a coluna `horizonte` nos trÃªs CSVs do painel, com os valores:
+  - `HistÃ³rico`
+  - `Operacional`
+  - `ExploratÃ³rio`
+- Regenerados os CSVs versionados de `painel/data/`.
+
+**AtualizaÃ§Ãµes de comunicaÃ§Ã£o:**
+- `README.md`
+  - passou a explicitar `2024â€“2027` como horizonte operacional e `2028â€“2031` como horizonte exploratÃ³rio.
+- `painel/metodologia.html`
+  - passou a reforÃ§ar essa distinÃ§Ã£o na seÃ§Ã£o de projeÃ§Ã£o, interpretaÃ§Ã£o e limitaÃ§Ãµes.
+- `painel/painel.qmd`
+  - passou a destacar visualmente o trecho exploratÃ³rio com faixa cinza;
+  - adicionou aviso lateral sobre leitura recomendada do horizonte;
+  - incluiu a informaÃ§Ã£o de horizonte na tabela;
+  - ajustou subtÃ­tulos e captions para reforÃ§ar a diferenÃ§a entre leitura operacional e exploratÃ³ria.
+
+**ValidaÃ§Ãµes realizadas:**
+- `parse()` dos scripts centrais do Bloco 3 â€” `parse_ok`.
+- ExecuÃ§Ã£o real de `R/02_consistencia.R` com `qa_status[['ok']] == TRUE`.
+- ExecuÃ§Ã£o real de `R/06_exportar_painel.R` com exportaÃ§Ã£o concluÃ­da.
+- ConfirmaÃ§Ã£o das colunas `horizonte` em:
+  - `painel/data/serie_principal.csv`
+  - `painel/data/vab_macrossetor.csv`
+  - `painel/data/vab_atividade.csv`
+
+**Arquivos modificados:** `R/config.R`, `R/02_consistencia.R`, `R/run_all.R`, `R/06_exportar_painel.R`, `painel/painel.qmd`, `painel/metodologia.html`, `README.md`, `checklist_reforma.md`
+
+**Outputs atualizados:**
+
+| Arquivo | Linhas | ObservaÃ§Ã£o |
+|---------|--------|------------|
+| `painel/data/serie_principal.csv` | 4.950 | coluna `horizonte` adicionada |
+| `painel/data/vab_macrossetor.csv` | 3.960 | coluna `horizonte` adicionada |
+| `painel/data/vab_atividade.csv` | 11.880 | coluna `horizonte` adicionada |
+
+---
+
 ## Pipeline completo (`run_all.R`)
 
 - Criado `run_all.R` para execução sequencial dos 5 scripts com tratamento de erros e cronometragem por etapa.
@@ -394,3 +553,283 @@ O diretório `_extensions/` gerado deve ser commitado junto com o painel.
 - [x] `R/04_reconciliacao.R` — garantir restrições de agregação nas projeções
 - [x] `R/05_output.R` — gerar tabelas e gráficos de resultado
 - [x] `run_all.R` — orquestrador do pipeline completo
+
+---
+
+## Etapa 15 — Preview local mínimo após o Bloco 3
+
+**Objetivo:**
+- manter a base exatamente no estado pós-Bloco 3 da reforma e adicionar apenas o mínimo necessário para inspecionar o painel localmente.
+
+**O que foi feito:**
+- criada a branch `preview-local-minimo` a partir do commit `6f88613` (`Qualifica: torna o QA bloqueante e separa horizonte operacional`);
+- criado `preview_painel_local.R`, que:
+  - extrai o bloco `shinylive-r` de `painel/painel.qmd`;
+  - substitui apenas em memória as URLs publicadas por recursos locais (`/data` e `/metodologia/metodologia.html`);
+  - sobe o app com `shiny::runApp()` sem alterar `painel/painel.qmd`;
+- criado `preview_painel_local.ps1` para facilitar a execução no Windows usando o `Rscript.exe` do R 4.4.0;
+- atualizado `README.md` com as instruções de uso do preview local mínimo.
+
+**Arquivos criados:** `preview_painel_local.R`, `preview_painel_local.ps1`
+**Arquivos modificados:** `README.md`
+
+**Resultado prático:**
+- o painel pode ser inspecionado localmente nesta branch sem depender do GitHub Pages e sem introduzir mudanças estruturais no arquivo `painel/painel.qmd`.
+
+---
+
+## Etapa 16 — Limpeza dos avisos visuais temporários do preview
+
+**Objetivo:**
+- remover as telas vermelhas de diagnóstico que ficaram no `painel.qmd` após os testes do preview.
+
+**O que foi feito:**
+- removida a função temporária `render_plot_erro()` do `painel/painel.qmd`;
+- restaurado o fluxo normal de `renderPlot()` nas quatro áreas gráficas:
+  - `plot_serie`
+  - `plot_macro`
+  - `plot_ativ`
+  - `plot_comp`
+- mantida apenas a notificação legível de falha de carregamento dos CSVs (`data_load_error`), que continua útil no preview local.
+
+**Arquivos modificados:** `painel/painel.qmd`
+
+**Resultado prático:**
+- o preview local deixa de exibir os placeholders vermelhos usados no diagnóstico anterior e volta a mostrar apenas o comportamento normal do painel.
+
+---
+
+## Etapa 17 — Redefinição agressiva do horizonte público do painel
+
+**Objetivo:**
+- restringir o produto público ao horizonte `h=3`, preservando o horizonte técnico completo `h=8` fora do painel.
+
+**O que foi alterado até aqui:**
+- `R/config.R`
+  - adicionados `H_PAINEL = 3L` e `ANO_PAINEL_PROJ_FIM = 2026L`;
+  - reclassificado o corte operacional para `2026` e o técnico complementar a partir de `2027`.
+- `R/06_exportar_painel.R`
+  - os CSVs em `painel/data/` passam a ser filtrados para o horizonte público do painel;
+  - criada a saída técnica adicional `output/tabelas/projecoes_painel_h8.xlsx`, preservando o horizonte completo de projeção.
+- `painel/painel.qmd`
+  - o painel passa a trabalhar com `ANO_PROJ_FIM = 2026L`;
+  - o cálculo do horizonte exibido foi fixado em `H_PAINEL`.
+- `README.md`
+  - adicionada seção explícita esclarecendo a separação entre painel público (`h=3`) e saída técnica (`h=8`);
+  - atualizada a seção de outputs para documentar `projecoes_painel_h8.xlsx`.
+- `painel/metodologia.html`
+  - adicionada observação no topo informando que o painel público foi reduzido para `2024–2026`, mesmo quando o pipeline técnico segue até `2031`.
+- `checklist_reforma.md`
+  - marcadas as atualizações de `README.md` e `painel/metodologia.html`.
+
+**Pendência operacional:**
+- regenerar os CSVs do painel e a planilha técnica `h=8` localmente, pois as tentativas automáticas desta sessão ficaram instáveis no shell.
+
+**Ajuste posterior solicitado pelo usuário:**
+- o controle `Anos de projeção exibidos` do painel deve ir de `1` a `3`, e não ficar travado em `3`;
+- a coluna `Horizonte` deixa de aparecer na tabela do painel;
+- as saídas técnicas passam a incluir duas planilhas auxiliares:
+  - `output/tabelas/projecoes_painel_h3.xlsx`
+  - `output/tabelas/projecoes_painel_h8.xlsx`
+
+**Correção adicional no painel:**
+- a aba de tabela passou a filtrar explicitamente `ano <= ano_max()`, para não exibir mais do que o horizonte público mesmo quando os CSVs ainda não tiverem sido regenerados;
+- o rodapé do painel foi ajustado para informar `2024–2026` em vez de `2024–2031`.
+
+**Correção adicional no preview local:**
+- `preview_painel_local.R` passou a tratar também os links relativos atuais da nota metodológica;
+- o clique em "Nota Metodológica" no preview local deve apontar para `/metodologia/metodologia.html`, evitando a página `not found`.
+
+**Alinhamento final da nota metodológica ao painel público:**
+- `painel/metodologia.html` foi reescrita para falar apenas do produto exibido no painel;
+- o horizonte metodológico passou a ser apresentado como `2024–2026 (h=3)` em todo o texto;
+- foram removidas referências remanescentes a horizonte operacional/exploratório e ao recorte `2024–2031` no corpo da nota.
+
+**Ajuste adicional nas planilhas técnicas do painel:**
+- `R/06_exportar_painel.R` passou a preservar `output/tabelas/projecoes_painel_h8.xlsx` como planilha técnica de referência;
+- o arquivo `output/tabelas/projecoes_painel_h3.xlsx` agora é gerado como cópia estrutural idêntica da planilha técnica, mudando apenas o horizonte exportado para `2024–2026`;
+- as abas das duas planilhas passam a usar a mesma convenção: `serie_principal`, `vab_macrossetor` e `vab_atividade`.
+
+## Etapa 18 — Organização da documentação antes do Bloco 4
+
+**Objetivo:**
+- revisar os arquivos Markdown do projeto e alinhar a documentação viva ao estado atual da reforma antes de iniciar o Bloco 4.
+
+**O que foi ajustado:**
+- `README.md`
+  - removida a referência incoerente ao filtro de projeção até `8` anos na interface do painel;
+  - atualizada a seção metodológica para refletir `2024–2026` como horizonte público do painel e `2024–2031` apenas como horizonte técnico complementar;
+  - reforçado que a interface pública não usa mais a distinção operacional/exploratória.
+- `checklist_reforma.md`
+  - adicionada nota de compatibilidade no Bloco 3 explicando que a distinção operacional/exploratória foi uma etapa intermediária e que o painel público atual foi simplificado para `h=3`.
+- `plano_reforma.md`
+  - adicionada nota de compatibilidade na seção de horizonte para registrar que, no estado atual do projeto, o painel público ficou restrito a `2024–2026`, deixando a extensão até `2031` apenas nas saídas técnicas.
+
+**Critério adotado na revisão:**
+- manter inalterados os documentos de caráter histórico ou de baseline;
+- corrigir apenas os arquivos que funcionam como documentação viva do estado atual do projeto.
+
+**Regeneração local confirmada dos CSVs do painel:**
+- `painel/data/serie_principal.csv` ficou com `4.125` linhas, projeções apenas em `2024–2026`;
+- `painel/data/vab_macrossetor.csv` ficou com `3.300` linhas, projeções apenas em `2024–2026`;
+- `painel/data/vab_atividade.csv` ficou com `9.900` linhas, projeções apenas em `2024–2026`;
+- os três arquivos mantêm a coluna `horizonte`, mas o painel público já limita a exibição ao horizonte `h=3`.
+
+---
+
+## Etapa 19 — Bloco 4 da reforma: reforma estatística do baseline univariado
+
+**O que foi feito:**
+
+**`R/config.R`:**
+- `HORIZONTES_CV` expandido de `1L` para `c(1L, 2L, 3L)` — CV avalia h=1, h=2 e h=3 simultaneamente.
+- `PESOS_CV` expandido de `1` para `c(0.5, 0.3, 0.2)` — maior peso ao curto prazo, alinhado ao horizonte operacional h=3.
+- Adicionado `N_FINALISTAS = 3L` — top 3 da triagem rápida avançam ao stage 2.
+- Adicionado `MAX_FALLBACK_PCT = 0.10` — pipeline interrompe se mais de 10% das séries precisarem de fallback.
+- `CACHE_SCHEMA_VERSION` atualizado para `"bloco4_v1"` — invalida automaticamente caches do Bloco 2.
+
+**`R/03_projecao.R`:**
+
+*Família de modelos reduzida de 10 para 7:*
+- Removidos: `sarima` (period=2 em dados anuais é artifício sem respaldo), `nnar` (instável com ~22 observações), `prophet` (superdimensionado para séries anuais sem sazonalidade).
+- Mantidos: `rw`, `arma`, `arima`, `ets`, `ets_amort`, `theta`, `ssm`.
+- Removida também a função `prophet_fc` e o `library(prophet)`.
+
+*CV multi-horizonte (substitui `cv_erros` e `metricas`):*
+- Nova função `cv_erros_multi()`: expanding window que ajusta o modelo uma vez com `h_max = max(HORIZONTES_CV)` e coleta erros para cada horizonte em matriz (linhas = janelas, colunas = h1/h2/h3).
+- Nova função `metricas_multi()`: computa MASE por horizonte e agrega com `PESOS_CV` em `mase_ponderado`.
+- Para série de 22 anos com MIN_TRAIN=15 e h_max=3: 5 janelas de CV válidas.
+
+*Two-stage CV (Parte 4):*
+- Stage 1 (triagem rápida, approx=TRUE): roda `cv_erros_multi` para todos os 7 modelos; seleciona top `N_FINALISTAS=3` por `mase_ponderado`.
+- Stage 2 (avaliação precisa, approx=FALSE): reavalia apenas os 3 finalistas com `MODELOS_PRECISO`; para modelos não-ARIMA (rw, ets, ets_amort, theta, ssm) reutiliza resultado do stage 1 sem recalcular.
+- Vencedor: menor `mase_ponderado` do stage 2 — especificação coerente com a projeção final.
+- Salvo `dados/metricas_cv_detalhadas.rds`: uma linha por série × modelo × horizonte com n_ok, rmse, mae, mase, mase_ponderado — entrada para diagnóstico do Bloco 5.
+
+*`selecao_cv` (estrutura atualizada):*
+- `mase_ponderado`: métrica de seleção do vencedor (stage 2).
+- `mase_venc_h1`, `mase_venc_h2`, `mase_venc_h3`: MASE do vencedor por horizonte (diagnóstico).
+- `mase_pond_<modelo>`: MASE ponderado do stage 1 para todos os modelos (referência comparativa).
+
+*Fallback estruturado (substitui `fallback_count`):*
+- `fallback_log` inicializado como tibble com colunas: `serie_id`, `modelo_original`, `modelo_fallback`, `etapa`, `motivo`.
+- Cada fallback acrescenta uma linha com o motivo do erro.
+- Ao final: salvo em `dados/fallback_log.rds`.
+- Pipeline interrompe com erro se `nrow(fallback_log) / length(ids) > MAX_FALLBACK_PCT`.
+
+*`params_modelos.rds` atualizado:*
+- Substituídas colunas `mase_melhor/rmse_melhor/mae_melhor` por `mase_ponderado` + `mase_venc_h1/h2/h3`.
+
+**Arquivos modificados:** `R/config.R`, `R/03_projecao.R`
+
+**Novos outputs gerados pelo pipeline:**
+
+| Arquivo | Conteúdo |
+|---------|----------|
+| `dados/metricas_cv_detalhadas.rds` | Métricas por série × modelo × horizonte (stage 1) |
+| `dados/fallback_log.rds` | Log estruturado de fallbacks por série |
+
+---
+
+## Etapa 20 — Bloco 5 da reforma: transparência, automação e documentação
+
+**O que foi feito:**
+
+**`R/06_exportar_painel.R`:**
+- Adicionada exportação de `painel/data/diagnostico.csv` ao final do script.
+- O CSV é montado a partir de `dados/params_modelos.rds` e `dados/fallback_log.rds`.
+- Colunas exportadas: `geo`, `geo_tipo`, `serie_tipo`, `macrossetor`, `atividade`, `variavel`, `modelo`, `parametros`, `mase_ponderado`, `mase_h1`, `mase_h2`, `mase_h3`, `fallback`.
+- `serie_tipo` derivado: `"Impostos"` quando `variavel == "log_impostos"`, `"Atividade"` quando `atividade` não-NA, `"Macrossetor"` nos demais casos.
+
+**`painel/painel.qmd`:**
+- Adicionado fetch de `diagnostico.csv` no `Promise.all` do bloco JavaScript (4º CSV).
+- Adicionado `Shiny.setInputValue("diagnostico_raw", ...)` para passar os dados ao servidor Shiny.
+- Adicionado reactive `diagnostico_df` que filtra pelo `input$geo` selecionado.
+- Adicionado `output$tabela_diagnostico <- renderDT(...)` com colunas: Tipo, Macrossetor, Atividade, Variável, Modelo, Especificação, MASE pond., MASE h=1/h=2/h=3, Fallback; filtro por coluna, `pageLength=15`, `scrollX=TRUE`.
+- Adicionado `nav_panel("Diagnóstico", ...)` após a aba Tabela.
+
+**`.github/workflows/publish-painel.yml`:**
+- Adicionado comentário explícito de que os CSVs são gerados localmente e commitados antes do push, com referência ao `rebuild-analytics.yml`.
+
+**`.github/workflows/rebuild-analytics.yml`** (criado):
+- Stub documentado com instrução completa do processo de rebuild local (5 passos).
+- `workflow_dispatch` com input `nota` informativo.
+- Job único que exibe as instruções — não executa o pipeline (base_bruta não está versionada).
+
+**`docs/arquitetura.md`** (criado):
+- Diagrama ASCII do fluxo de dados (base_bruta → dados → output/painel).
+- Tabela de scripts com papel, entradas, saídas e tempo estimado.
+- Tabela de parâmetros de `R/config.R`.
+- Convenções de nomenclatura (`serie_id`, prefixo `ativ__`, `geo_tipo`).
+- Tabela de versionamento (o que está/não está no git e por quê).
+- Fluxo completo de publicação do painel.
+
+**`docs/qa.md`** (criado):
+- As 5 identidades contábeis com tolerâncias e severidades (fatal vs warning).
+- Estrutura do `qa_status` e comportamento de barreira no `run_all.R`.
+- Exceção conhecida de Acre 2002.
+- Mecanismo de cache com invalidação automática por hash MD5 e schema `bloco4_v1`.
+- Logging estruturado: localização, estrutura e quando consultar.
+- Fallback: `fallback_log` tibble, `MAX_FALLBACK_PCT = 10%`, condição de parada.
+- Verificações de integridade pós-reconciliação.
+
+**`docs/modelagem.md`** (criado):
+- Séries modeladas: grupos A (264), B (33), C (~792) com variáveis e período.
+- Família de 7 modelos com tabela e justificativas de exclusão dos 3 removidos.
+- CV two-stage: lógica dos dois estágios, janelas expansivas, MASE ponderado com fórmula.
+- Parâmetros do CV em `R/config.R` (tabela).
+- Especificação ARIMA no stage 2 e na projeção final (limites de ordem).
+- Derivações contábeis com fórmulas: VAB nominal, PIB, deflator.
+- Reconciliação top-down: fórmulas dos fatores de ajuste nos dois passos.
+- Horizontes técnico (h=8) vs operacional (h=3) com tabela de parâmetros.
+- Guia de interpretação do `diagnostico.csv`.
+
+**Arquivos modificados:** `R/06_exportar_painel.R`, `painel/painel.qmd`, `.github/workflows/publish-painel.yml`
+
+**Arquivos criados:** `.github/workflows/rebuild-analytics.yml`, `docs/arquitetura.md`, `docs/qa.md`, `docs/modelagem.md`
+
+---
+
+## Etapa 21 — Bloco 6 da reforma: automação de download e parametrização temporal
+
+**O que foi feito:**
+
+**`R/config.R`:**
+- Adicionados 5 parâmetros de download: `IBGE_FTP_BASE`, `SIDRA_TABELA_ID`, `DOWNLOAD_DIR`, `STATUS_JSON_PATH`, `TOL_VALIDACAO_DOWNLOAD` (0,1%).
+
+**`R/00_download_ibge.R`** (criado):
+- Passo 1: monta URLs do FTP IBGE a partir de `ANO_BASE` e `ANO_HIST_FIM` — URL derivada automaticamente, nenhuma edição manual necessária quando o IBGE publicar novo ano.
+- Passo 2: download dos ZIPs com `httr2` — trata HTTP 404 (E01) e timeout (E02).
+- Passo 3: extração para pasta temporária `base_bruta/_novo/` — só promove após validação.
+- Passo 4: download da tabela 5938 do SIDRA via `sidrar::get_sidra()` — PIB + impostos + VAB por UF; salva como XLSX via `openxlsx`.
+- Passo 5: validação cruzada com `dados/especiais.rds` (se existir) — compara PIB Brasil nos anos comuns exceto o mais recente; para com E03 se desvio > 0,1%.
+- Passo 6: promoção das pastas `_novo/` → `base_bruta/` e gravação de `painel/data/status_dados.json`.
+- Códigos de erro estruturados E01–E05 gravados no JSON antes de `stop()`.
+- Pacotes necessários: `httr2`, `sidrar`, `jsonlite`, `openxlsx` (instalar com `renv::install()` e `renv::snapshot()`).
+
+**`R/01_leitura_dados.R`:**
+- Adicionado `source("R/config.R", local = FALSE)` no topo.
+- Adicionada variável `N_ANOS <- ANO_HIST_FIM - ANO_HIST_INI + 1L`.
+- Caminhos `ESPECIAIS` e `CONTA_PROD` agora derivados de `ANO_HIST_INI`/`ANO_HIST_FIM`.
+- Ranges de colunas em `ler_especial_simples` e `ler_especial_atividade` substituídos por `2:(N_ANOS + 1L)` e `1:(N_ANOS + 1L)`.
+- Ranges de linhas dos blocos VBP/CI/VAB em `ler_conta_bloco` substituídos por fórmulas com `N_ANOS`.
+- Contagem esperada na verificação final substituída por `33 * 13 * 3 * N_ANOS`.
+- Comparação PIB final usa `ANO_HIST_FIM` em vez de `2023` hardcoded.
+
+**`R/run_all.R`:**
+- Adicionada etapa 0 opcional — ativa com `DOWNLOAD_ANTES_DE_RODAR <- TRUE` antes de `source("R/run_all.R")`.
+
+**`painel/painel.qmd`:**
+- 5º fetch no `Promise.all` para `status_dados.json` (retorna `null` sem erro se arquivo não existir).
+- `output$status_dados_txt`: exibe "Dados: 2002–2023 · atualizado em YYYY-MM-DD" ou aviso vermelho com código de erro.
+- Footer atualizado para incluir `uiOutput("status_dados_txt")` acima da linha de fonte.
+
+**Arquivos modificados:** `R/config.R`, `R/01_leitura_dados.R`, `R/run_all.R`, `painel/painel.qmd`, `checklist_reforma.md`
+
+**Arquivos criados:** `R/00_download_ibge.R`
+
+**Correção aplicada:** `escrever_aba_sidra()` passou a escrever 3 linhas de preenchimento (`.`) nas linhas 1–3 do XLSX para evitar que `read_xls` saltasse linhas vazias e deslocasse a numeração. Com o ajuste, a linha 4 (anos) e as linhas 5–37 (dados geográficos) são lidas corretamente por `ler_especial_simples()`.
+
+**Validação executada:** `source("R/00_download_ibge.R")` concluiu sem erros — ZIPs baixados, SIDRA salvo, desvio máximo do PIB Brasil 0%, `painel/data/status_dados.json` gravado com `status = "ok"`.
+
+**Pacotes adicionados ao `renv.lock`:** `httr2` 1.2.2, `sidrar` 0.2.9, `rjson` 0.2.23.

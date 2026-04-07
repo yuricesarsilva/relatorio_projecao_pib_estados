@@ -1,4 +1,5 @@
-library(tidyverse)
+source("R/config.R", local = FALSE)
+source("R/utils_logging.R", local = FALSE)
 
 # ==============================================================================
 # run_all.R
@@ -15,14 +16,18 @@ library(tidyverse)
 #     → dados/consistencia.rds       (resultados das 5 checagens contábeis)
 #
 #   03_projecao.R                    (~1.089 séries: macro + impostos + ativ.)
-#     → dados/selecao_modelos.rds    (cache CV — melhor modelo por série)
-#     → dados/projecoes_brutas.rds   (proj + IC 95% por série × ano)
-#     → dados/params_modelos.rds     (modelo, parâmetros, MASE, RMSE)
-#     → dados/vab_macro_hist.rds     (histórico VAB macro para gráficos)
-#     → dados/vab_atividade_hist.rds (histórico VAB atividade para gráficos)
+#     → dados/selecao_modelos.rds       (cache CV two-stage — melhor modelo por série)
+#     → dados/selecao_modelos_meta.rds  (metadata de invalidação do cache)
+#     → dados/metricas_cv_detalhadas.rds (métricas por série × modelo × horizonte)
+#     → dados/projecoes_brutas.rds      (proj + IC 95% por série × ano)
+#     → dados/params_modelos.rds        (modelo, parâmetros, mase_ponderado,
+#                                         mase_venc_h1/h2/h3 por série)
+#     → dados/fallback_log.rds          (log de fallbacks para ARIMA)
+#     → dados/vab_macro_hist.rds        (histórico VAB macro para gráficos)
+#     → dados/vab_atividade_hist.rds    (histórico VAB atividade para gráficos)
 #     → dados/vab_macrossetor_proj.rds
-#     → dados/vab_atividade_proj.rds (proj + IC por atividade × geo × ano)
-#     → dados/projecoes_derivadas.rds (PIB, VAB, impostos, deflator, cresc.)
+#     → dados/vab_atividade_proj.rds    (proj + IC por atividade × geo × ano)
+#     → dados/projecoes_derivadas.rds   (PIB, VAB, impostos, deflator, cresc.)
 #
 #   04_reconciliacao.R               (benchmarking top-down: BR → reg → UF)
 #     → dados/projecoes_reconciliadas.rds
@@ -45,10 +50,30 @@ library(tidyverse)
 #      GitHub Pages. Executar 06 após qualquer atualização do pipeline.)
 #
 # Cache do CV (03_projecao.R):
-#   Se dados/selecao_modelos.rds existir, o CV é pulado e os modelos
-#   salvos são reutilizados. IMPORTANTE: deletar o arquivo ao adicionar
-#   novas séries (ex.: novas atividades) para forçar reprocessamento.
+#   A seleção usa CV two-stage expanding-window (h=1/2/3, MASE ponderado).
+#   A metadata inclui hashes dos insumos, parâmetros e do script — o cache
+#   é reutilizado apenas quando a assinatura continua válida.
+#   Schema: CACHE_SCHEMA_VERSION = "bloco4_v1" (R/config.R).
 # ==============================================================================
+
+# ==============================================================================
+# Etapa 0 — Download IBGE (opcional)
+#
+# Por padrão desativado — útil quando a base já está atualizada localmente.
+# Para ativar antes de rodar o pipeline:
+#   DOWNLOAD_ANTES_DE_RODAR <- TRUE
+#   source("R/run_all.R")
+# ==============================================================================
+if (!exists("DOWNLOAD_ANTES_DE_RODAR")) DOWNLOAD_ANTES_DE_RODAR <- FALSE
+
+if (isTRUE(DOWNLOAD_ANTES_DE_RODAR)) {
+  cat("\n", strrep("=", 70), "\n", sep = "")
+  cat("Etapa 0: Download IBGE\n")
+  cat(strrep("=", 70), "\n\n", sep = "")
+  registrar_evento_log("run_all", "INFO", "Etapa 0: iniciando download IBGE")
+  source("R/00_download_ibge.R", local = FALSE)
+  registrar_evento_log("run_all", "INFO", "Etapa 0: download IBGE concluido")
+}
 
 scripts <- c(
   "R/01_leitura_dados.R",
@@ -60,6 +85,24 @@ scripts <- c(
 )
 
 t_total <- proc.time()
+set.seed(SEED_GLOBAL)
+
+inicializar_log_execucao(
+  prefixo = "run_all",
+  contexto = list(
+    branch = obter_git_branch(),
+    commit = obter_git_commit(),
+    seed = SEED_GLOBAL,
+    r_version = R.version.string
+  )
+)
+
+registrar_evento_log(
+  etapa = "run_all",
+  nivel = "INFO",
+  mensagem = "Pipeline iniciado",
+  detalhe = paste(scripts, collapse = " | ")
+)
 
 for (script in scripts) {
   cat("\n", strrep("=", 70), "\n", sep = "")
@@ -67,10 +110,18 @@ for (script in scripts) {
   cat(strrep("=", 70), "\n\n", sep = "")
 
   t0 <- proc.time()
+  registrar_evento_log("run_all", "INFO", "Inicio de script", script)
 
   tryCatch(
     source(script, echo = FALSE, local = FALSE),
     error = function(e) {
+      registrar_evento_log(
+        etapa = "run_all",
+        nivel = "ERROR",
+        mensagem = "Falha na execucao de script",
+        detalhe = paste(script, "-", conditionMessage(e))
+      )
+      salvar_log_execucao(status = "erro")
       cat("\n*** ERRO em", script, "***\n")
       cat(conditionMessage(e), "\n")
       cat("Pipeline interrompido.\n")
@@ -78,9 +129,36 @@ for (script in scripts) {
     }
   )
 
+  if (identical(script, "R/02_consistencia.R") &&
+      exists("qa_status", envir = .GlobalEnv, inherits = FALSE)) {
+    qa_status_atual <- get("qa_status", envir = .GlobalEnv, inherits = FALSE)
+
+    if (!isTRUE(qa_status_atual$ok)) {
+      registrar_evento_log(
+        etapa = "run_all",
+        nivel = "ERROR",
+        mensagem = "QA bloqueante interrompeu o pipeline",
+        detalhe = paste(
+          qa_status_atual$erros_fatais$check,
+          collapse = ", "
+        )
+      )
+      salvar_log_execucao(status = "erro_qa")
+      stop("QA bloqueante falhou em R/02_consistencia.R. Pipeline interrompido.")
+    }
+  }
+
   elapsed <- round((proc.time() - t0)[["elapsed"]])
+  registrar_evento_log(
+    etapa = "run_all",
+    nivel = "INFO",
+    mensagem = "Fim de script",
+    detalhe = paste(script, "-", elapsed, "s")
+  )
   cat("\n[OK]", script, "—", elapsed, "s\n")
 }
+
+salvar_log_execucao(status = "sucesso")
 
 cat("\n", strrep("=", 70), "\n", sep = "")
 cat("Pipeline concluído em",

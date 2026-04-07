@@ -181,9 +181,15 @@
 
 <header>
   <div class="instituicao">Secretaria de Planejamento e Orçamento de Roraima — SEPLAN/RR &nbsp;|&nbsp; CGEES</div>
-  <h1>Nota Metodológica<br>Projeções dos PIBs Estaduais 2024–2031</h1>
+  <h1>Nota Metodológica<br>Projeções dos PIBs Estaduais 2024–2026</h1>
   <div class="subtitulo">Versão 1.0 &nbsp;·&nbsp; Abril de 2026 &nbsp;·&nbsp; Yuri Cesar de Lima e Silva</div>
 </header>
+
+<div class="aviso">
+  <strong>Escopo desta nota:</strong> este texto descreve exclusivamente o <strong>painel público</strong>.
+  Por isso, todas as referências metodológicas abaixo devem ser lidas à luz do horizonte
+  <strong>2024–2026 (h=3)</strong>, que é o recorte efetivamente exibido ao usuário do painel.
+</div>
 
 <nav class="indice">
   <p>Sumário</p>
@@ -264,7 +270,9 @@
 <section id="modelos">
   <h2>3. Modelos candidatos</h2>
   <p>
-    Para cada uma das ~1.089 séries, dez modelos de séries temporais são estimados e avaliados:
+    Para cada uma das ~1.089 séries, sete modelos de séries temporais são estimados e avaliados.
+    A escolha do conjunto foi feita considerando a natureza das séries — anuais, com ~22 observações —
+    priorizando modelos parcimoniosos e computacionalmente auditáveis:
   </p>
   <table>
     <thead>
@@ -272,37 +280,38 @@
     </thead>
     <tbody>
       <tr><td>RW</td><td>Passeio aleatório (<em>random walk</em>)</td><td>Linha de base simples; assume que o melhor palpite para amanhã é hoje</td></tr>
-      <tr><td>ARMA</td><td>Média móvel autorregressiva</td><td>Captura dependência linear de curto prazo sem tendência estocástica</td></tr>
+      <tr><td>ARMA</td><td>Média móvel autorregressiva (d=0)</td><td>Captura dependência linear de curto prazo em séries estacionárias</td></tr>
       <tr><td>ARIMA</td><td>ARIMA automático</td><td>Inclui diferenciação; seleção automática de ordem por AIC</td></tr>
-      <tr><td>SARIMA</td><td>ARIMA sazonal (período 2)</td><td>Captura ciclos bienais em dados anuais</td></tr>
       <tr><td>ETS</td><td>Suavização exponencial</td><td>Modela nível, tendência e sazonalidade de forma adaptativa</td></tr>
       <tr><td>ETS-A</td><td>ETS com tendência amortecida</td><td>Projeta crescimento desacelerando ao longo do horizonte</td></tr>
       <tr><td>THETA</td><td>Método Theta</td><td>Vencedor da competição M3; combina regressão linear e suavização</td></tr>
-      <tr><td>NNAR</td><td>Rede neural autorregressiva</td><td>Captura não-linearidades; média de múltiplas redes</td></tr>
-      <tr><td>PROPHET</td><td>Prophet (Meta)</td><td>Decompõe tendência, sazonalidade e efeitos de calendário</td></tr>
       <tr><td>SSM</td><td>Modelo de espaço de estados (<em>local linear trend</em>)</td><td>Filtro de Kalman via MLE; separa componente de nível e tendência</td></tr>
     </tbody>
   </table>
+  <div class="aviso">
+    <strong>Modelos excluídos do baseline:</strong> SARIMA (sazonalidade period=2 é artifício sem respaldo em dados anuais), NNAR (redes neurais autorregressivas são instáveis com ~22 observações) e Prophet (superdimensionado para séries anuais sem sazonalidade). Esses modelos podem ser reavaliados em rodadas metodológicas futuras com séries mais longas ou com regressoras exógenas.
+  </div>
 </section>
 
 <!-- 4 -->
 <section id="selecao">
   <h2>4. Seleção de modelos por validação cruzada</h2>
   <p>
-    A escolha do modelo para cada série é feita por <strong>validação cruzada com janela expansível
-    (<em>expanding window cross-validation</em>)</strong>. O procedimento consiste em:
+    A escolha do modelo para cada série é feita por <strong>validação cruzada two-stage com janela
+    expansível (<em>expanding window cross-validation</em>)</strong>. O procedimento consiste em:
   </p>
   <ol style="padding-left:24px; margin-bottom:14px; line-height:2;">
     <li>Fixar um tamanho mínimo de treino de <strong>15 observações</strong> (o que implica que o primeiro conjunto de teste começa em 2017).</li>
-    <li>A cada passo, expandir o conjunto de treino em um ano, estimar todos os dez modelos e gerar previsões para os anos seguintes.</li>
-    <li>Calcular o <strong>MASE</strong> (<em>Mean Absolute Scaled Error</em>) acumulado para cada modelo — uma métrica que escala o erro pela dificuldade da série, permitindo comparação entre séries de magnitudes muito diferentes.</li>
-    <li>Selecionar o modelo com <strong>menor MASE médio</strong> no período de validação.</li>
+    <li>A cada passo, expandir o conjunto de treino em um ano, estimar todos os sete modelos e gerar previsões para <strong>h=1, h=2 e h=3</strong> simultaneamente — em vez de avaliar apenas o próximo ano. Isso alinha a seleção ao horizonte real de uso do painel (2024–2026).</li>
+    <li>Calcular o <strong>MASE ponderado</strong> (<em>Mean Absolute Scaled Error</em> com pesos 0,5 / 0,3 / 0,2 para h=1, h=2 e h=3) — uma métrica que escala o erro pela dificuldade da série e pondera os horizontes conforme sua relevância operacional.</li>
+    <li><strong>Estágio 1 (triagem rápida):</strong> selecionar os 3 modelos finalistas por menor MASE ponderado, usando estimação aproximada.</li>
+    <li><strong>Estágio 2 (avaliação precisa):</strong> reavaliar apenas os 3 finalistas com a mesma especificação que será usada na projeção final (sem aproximação numérica para ARIMA/ARMA). O vencedor final é o modelo com menor MASE ponderado neste estágio.</li>
   </ol>
   <div class="destaque">
-    <strong>Por que MASE?</strong> Ao contrário do RMSE ou do MAPE, o MASE é robusto a séries com valores próximos de zero e não penaliza desproporcionalmente erros em séries muito voláteis. Ele compara o erro do modelo com o erro de um passeio aleatório simples, sendo valores abaixo de 1,0 indicativos de que o modelo supera a linha de base.
+    <strong>Por que MASE ponderado em múltiplos horizontes?</strong> Avaliar apenas h=1 favorece modelos que acertam o próximo ano mas degradam rapidamente. Ao incluir h=2 e h=3 com peso decrescente, a seleção passa a refletir o desempenho real no horizonte de 2024–2026. O MASE, por sua vez, é robusto a séries com valores próximos de zero e compara o erro do modelo com o erro de um passeio aleatório simples — valores abaixo de 1,0 indicam que o modelo supera a linha de base.
   </div>
   <p>
-    Para a <strong>projeção final</strong> (após a seleção), os modelos ARIMA e ARMA são reestimados sem a opção de aproximação numérica, garantindo maior precisão nos parâmetros.
+    Para a <strong>projeção final</strong> (após a seleção), os modelos ARIMA e ARMA são reestimados sem a opção de aproximação numérica, garantindo maior precisão nos parâmetros. Essa especificação é a mesma usada no estágio 2 do CV, eliminando a incoerência entre seleção e projeção.
   </p>
 </section>
 
@@ -310,10 +319,14 @@
 <section id="projecao">
   <h2>5. Geração das projeções</h2>
   <p>
-    Com o modelo selecionado, cada série é projetada para o horizonte de <strong>2024 a 2031 (8 anos)</strong>.
+    No painel, cada série é apresentada no horizonte de <strong>2024 a 2026 (3 anos)</strong>.
     Os índices de volume e preço projetados são então encadeados ao valor de 2023 para reconstruir os
     valores nominais:
   </p>
+  <div class="aviso">
+    <strong>Leitura recomendada do horizonte:</strong> nesta aplicação, o foco de comunicação está inteiramente no intervalo
+    <strong>2024–2026</strong>, que concentra o horizonte público do painel.
+  </div>
   <ul style="padding-left:24px; margin-bottom:14px; line-height:2;">
     <li><strong>VAB nominal por macrossetor</strong> = VAB<sub>2023</sub> × ∏(índice de volume × índice de preço)</li>
     <li><strong>VAB nominal total</strong> = soma dos macrossetores por território e ano</li>
@@ -400,7 +413,7 @@
   <div class="aviso">
     <strong>Projeções não são previsões infalíveis.</strong> Elas representam o comportamento mais provável
     das variáveis caso as tendências e padrões históricos se mantenham — o que raramente ocorre de forma
-    perfeita por períodos tão longos quanto oito anos.
+    perfeita mesmo em horizontes curtos como o recorte de três anos exibido no painel.
   </div>
   <p>
     A forma correta de leitura é a de <strong>cenários condicionais</strong>:
@@ -411,9 +424,12 @@
     <li><strong>Limite superior (IC 95%):</strong> um cenário otimista compatível com a variabilidade histórica.</li>
   </ul>
   <p>
-    Quanto mais distante o horizonte, mais ampla será a faixa entre os limites — e mais humildade devemos
-    ter ao interpretar os números. As projeções para 2024 e 2025 tendem a ser substancialmente mais
-    confiáveis do que aquelas para 2030 e 2031.
+    Mesmo dentro de um horizonte curto, a incerteza aumenta à medida que avançamos no tempo.
+    Em geral, as projeções para 2024 tendem a ser mais informativas do que as de 2026.
+  </p>
+  <p>
+    Por esse motivo, o painel adota um recorte público mais conservador e concentra a leitura em
+    <strong>2024–2026</strong>.
   </p>
   <p>
     Essas projeções <strong>não incorporam</strong> choques futuros desconhecidos (crises financeiras,
@@ -426,18 +442,31 @@
 <section id="limitacoes">
   <h2>10. Limitações e ressalvas</h2>
   <ul style="padding-left:24px; margin-bottom:14px; line-height:2.1;">
-    <li><strong>Séries curtas:</strong> com apenas 22 observações anuais (2002–2023), os modelos têm pouca
-      informação para estimar ciclos longos ou estruturas complexas.</li>
-    <li><strong>Revisões do IBGE:</strong> as Contas Regionais são revisadas periodicamente; projeções
-      baseadas em dados preliminares podem divergir das versões definitivas.</li>
-    <li><strong>Hipótese de estacionariedade:</strong> a maioria dos modelos assume que os padrões de
-      crescimento do passado se repetirão. Mudanças estruturais nas economias estaduais invalidam
-      essa hipótese.</li>
-    <li><strong>Reconciliação top-down:</strong> o método preserva a hierarquia geográfica mas pode
-      atenuar projeções de crescimento acelerado em estados pequenos quando a âncora Brasil projeta
-      crescimento moderado.</li>
-    <li><strong>Dados de 2023:</strong> o último ano disponível nas Contas Regionais ao momento da
-      elaboração é 2023. As projeções para 2024 em diante partem desse ponto.</li>
+    <li><strong>Instrumento de apoio à decisão:</strong> nesta fase do projeto, o painel foi desenhado para
+      apoiar planejamento, monitoramento e discussões prospectivas de curto prazo. Ele organiza evidências
+      de forma comparável e transparente, mas não substitui análises setoriais, leitura de conjuntura ou o
+      conhecimento institucional sobre cada estado.</li>
+    <li><strong>Base histórica relativamente curta:</strong> as projeções são estimadas com 22 observações
+      anuais (2002–2023). Isso é suficiente para produzir sinais úteis de tendência, mas ainda limita a
+      identificação de ciclos longos e de dinâmicas mais complexas.</li>
+    <li><strong>Horizonte público conservador por escolha metodológica:</strong> o recorte de 2024 a 2026 foi
+      adotado para privilegiar leituras mais robustas nesta etapa de consolidação do produto. Ainda assim, a
+      incerteza cresce ao longo do horizonte, e os anos mais distantes devem ser lidos com mais cautela do que
+      os primeiros anos projetados.</li>
+    <li><strong>Dependência da base oficial disponível:</strong> o último ano observado nas Contas Regionais,
+      no momento desta versão, é 2023. As projeções para 2024 em diante partem desse ponto e podem ser
+      recalibradas sempre que novas divulgações ou revisões do IBGE forem incorporadas.</li>
+    <li><strong>Continuidade dos padrões históricos:</strong> os modelos pressupõem, em maior ou menor grau,
+      que regularidades observadas no passado seguem sendo uma boa referência para o curto prazo. Mudanças
+      estruturais relevantes nas economias estaduais podem reduzir essa aderência.</li>
+    <li><strong>Reconciliação hierárquica com âncora Brasil:</strong> a estratégia top-down melhora a
+      coerência entre Brasil e unidades da federação, o que é importante para leitura comparativa do painel.
+      Em contrapartida, ela pode suavizar trajetórias muito intensas em estados menores quando a projeção
+      nacional aponta crescimento mais moderado.</li>
+    <li><strong>Choques não antecipados ficam fora do cenário-base:</strong> eventos como mudanças abruptas de
+      política, crises, desastres ou inflexões institucionais não são previstos explicitamente pelos modelos.
+      Nesses casos, o uso recomendado é combinar o painel com análises complementares e atualizações
+      periódicas das projeções.</li>
   </ul>
 </section>
 

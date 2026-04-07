@@ -1,14 +1,9 @@
+source("R/config.R", local = FALSE)
+source("R/utils_cache.R", local = FALSE)
+source("R/utils_logging.R", local = FALSE)
+
 library(tidyverse)
 library(forecast)
-
-# Instalar pacotes ausentes
-for (p in c("prophet")) {
-  if (!requireNamespace(p, quietly = TRUE)) {
-    message("Instalando ", p, "...")
-    install.packages(p, repos = "https://cloud.r-project.org")
-  }
-}
-library(prophet)
 
 # ==============================================================================
 # 03_projecao.R
@@ -29,21 +24,22 @@ library(prophet)
 #        serie_id com prefixo "ativ__" para evitar colisão com macrossetores
 #        (ex.: "Roraima|ativ__agropecuaria|idx_volume")
 #
-# Modelos candidatos (10 por série):
-#   rw, arma, arima, sarima, ets, ets_amort, theta, nnar, prophet, ssm
-#   Seleção por validação cruzada expanding-window, métrica MASE.
-#   Para projeção final: arima/arma sem approximation (mais preciso).
+# Família de modelos (7 por série):
+#   rw, arma, arima, ets, ets_amort, theta, ssm
+#   Excluídos do baseline: sarima (period=2 sem respaldo em dados anuais),
+#   nnar (instável com ~22 obs), prophet (superdimensionado para anuais).
 #
-# Notas sobre modelos:
-#   SARIMA: dados anuais não têm sazonalidade intra-anual; implementado com
-#     period=2 para capturar ciclos bienais — auto.arima descarta se não
-#     significativo.
-#   SSM: StructTS local linear trend (filtro de Kalman via MLE), substitui
-#     BSTS (indisponível para R 4.4.2).
+# Seleção — CV two-stage expanding-window, horizontes h=1/2/3:
+#   Stage 1 (triagem rápida, approx=TRUE): todos os 7 modelos → top N_FINALISTAS
+#   Stage 2 (avaliação precisa, approx=FALSE): apenas os finalistas; modelos
+#     não-ARIMA reutilizam resultado do stage 1. Vencedor = menor MASE ponderado.
+#   Métrica: MASE ponderado (pesos PESOS_CV = 0.5/0.3/0.2 para h=1/2/3).
+#   Para projeção final: arima/arma com stepwise=FALSE, approximation=FALSE,
+#     max.p/q=3, max.P/Q/D=0 — mesma especificação do stage 2.
 #
-# Cache: se dados/selecao_modelos.rds existir, o CV é pulado.
-#   IMPORTANTE: deletar o cache ao adicionar novas séries (ex.: séries de
-#   atividade) para que o CV seja refeito para todas as séries.
+# Cache: a seleção usa metadata com hashes dos insumos, parâmetros e do script.
+#   O cache só é reutilizado quando a assinatura continua válida.
+#   Schema atual: CACHE_SCHEMA_VERSION = "bloco4_v1" (config.R).
 #
 # Parte 7 — Derivações contábeis (macrossetores):
 #   VAB nominal macro  = vab_2023 × cumprod(idx_volume × idx_preco)
@@ -59,24 +55,24 @@ library(prophet)
 #   IC 95% propagado   = vab_2023_ativ × cumprod(idx_lo95 × idx_prc_lo95)
 #
 # Entradas:  dados/especiais.rds, dados/conta_producao.rds
-# Saídas:    dados/selecao_modelos.rds   (cache CV — uma linha por série)
-#            dados/projecoes_brutas.rds  (proj + IC por série × ano)
-#            dados/params_modelos.rds    (modelo, parâmetros, MASE, RMSE)
+# Saídas:    dados/selecao_modelos.rds      (cache CV two-stage — uma linha por série)
+#            dados/selecao_modelos_meta.rds (metadata de invalidação do cache)
+#            dados/metricas_cv_detalhadas.rds (métricas por série × modelo × horizonte)
+#            dados/projecoes_brutas.rds     (proj + IC por série × ano)
+#            dados/params_modelos.rds       (modelo, parâmetros, mase_ponderado,
+#                                            mase_venc_h1/h2/h3 por série)
+#            dados/fallback_log.rds         (séries com fallback para ARIMA)
 #            dados/vab_macrossetor_proj.rds
-#            dados/vab_macro_hist.rds    (histórico macro para gráficos)
-#            dados/vab_atividade_hist.rds (histórico atividade para gráficos)
-#            dados/vab_atividade_proj.rds (proj + IC por atividade × geo × ano)
-#            dados/projecoes_derivadas.rds (PIB, VAB, impostos, deflator)
+#            dados/vab_macro_hist.rds       (histórico macro para gráficos)
+#            dados/vab_atividade_hist.rds   (histórico atividade para gráficos)
+#            dados/vab_atividade_proj.rds   (proj + IC por atividade × geo × ano)
+#            dados/projecoes_derivadas.rds  (PIB, VAB, impostos, deflator)
 # ==============================================================================
 
 # ==============================================================================
 # Parâmetros globais
 # ==============================================================================
 
-H         <- 8L    # horizonte de projeção (2024–2031)
-ANO_BASE  <- 2002L
-ANO_FIM   <- 2023L
-MIN_TRAIN <- 15L   # mínimo de obs para treino no CV → test a partir de 2017
 
 # ==============================================================================
 # Mapeamento macrossetores → atividades
@@ -100,6 +96,28 @@ ativ_macro <- tibble(
 # ==============================================================================
 # Parte 1 — Preparação dos dados
 # ==============================================================================
+
+fallback_log <- tibble(
+  serie_id        = character(),
+  modelo_original = character(),
+  modelo_fallback = character(),
+  etapa           = character(),
+  motivo          = character()
+)
+
+if (!exists("LOG_EXECUCAO_ID", envir = .GlobalEnv, inherits = FALSE)) {
+  inicializar_log_execucao(
+    prefixo = "03_projecao",
+    contexto = list(
+      branch = obter_git_branch(),
+      commit = obter_git_commit(),
+      seed = SEED_GLOBAL,
+      r_version = R.version.string
+    )
+  )
+}
+
+registrar_evento_log("03_projecao", "INFO", "Carregando dados de projeção")
 
 message("Carregando dados...")
 esp <- readRDS("dados/especiais.rds")
@@ -201,123 +219,306 @@ message("Total de séries a modelar: ", length(ids),
 # Interface: fn(ts_obj, h) → forecast object com $mean, $lower, $upper
 # ==============================================================================
 
-# Wrapper Prophet: converte ts para data frame ds/y, ajusta e retorna forecast
-prophet_fc <- function(x, h) {
-  anos <- as.integer(time(x))
-  df   <- data.frame(ds = as.Date(paste0(anos, "-01-01")), y = as.numeric(x))
-  suppressMessages({
-    m   <- prophet::prophet(df, yearly.seasonality = FALSE,
-                            weekly.seasonality = FALSE, daily.seasonality = FALSE,
-                            verbose = FALSE)
-    fut <- prophet::make_future_dataframe(m, periods = h, freq = "year")
-    pred <- prophet::predict(m, fut)
-  })
-  proj <- tail(pred, h)
-  structure(
-    list(
-      mean  = ts(proj$yhat,       start = max(anos) + 1L, frequency = 1),
-      lower = cbind(proj$yhat_lower, proj$yhat_lower),
-      upper = cbind(proj$yhat_upper, proj$yhat_upper)
-    ),
-    class = "forecast"
-  )
-}
-
+# Família principal de modelos — 7 candidatos para séries anuais curtas.
+# Removidos do baseline: sarima (period=2 artificial), nnar (instável com ~22 obs),
+# prophet (superdimensionado para anuais sem sazonalidade).
 MODELOS <- list(
   rw        = function(x, h) rwf(x, drift = TRUE, h = h),
   arma      = function(x, h) forecast(auto.arima(x, d = 0,
                               stepwise = TRUE, approximation = TRUE), h = h),
   arima     = function(x, h) forecast(auto.arima(x,
                               stepwise = TRUE, approximation = TRUE), h = h),
-  sarima    = function(x, h) forecast(auto.arima(ts(as.numeric(x), frequency = 2),
-                              stepwise = TRUE, approximation = TRUE), h = h),
   ets       = function(x, h) forecast(ets(x), h = h),
   ets_amort = function(x, h) forecast(ets(x, damped = TRUE), h = h),
   theta     = function(x, h) thetaf(x, h = h),
-  nnar      = function(x, h) forecast(nnetar(x), h = h),
-  prophet   = prophet_fc,
   ssm       = function(x, h) forecast(StructTS(x, type = "trend"), h = h)
 )
+
+executar_modelo_com_log <- function(expr, etapa, serie_id, modelo) {
+  avisos <- character()
+
+  resultado <- tryCatch(
+    withCallingHandlers(
+      expr,
+      warning = function(w) {
+        avisos <<- c(avisos, conditionMessage(w))
+        invokeRestart("muffleWarning")
+      }
+    ),
+    error = function(e) {
+      registrar_evento_log(
+        etapa = "03_projecao",
+        nivel = "ERROR",
+        mensagem = paste("Erro em", etapa),
+        detalhe = paste("serie_id =", serie_id, "| modelo =", modelo, "|", conditionMessage(e))
+      )
+      structure(list(mensagem = conditionMessage(e)), class = "erro_modelo")
+    }
+  )
+
+  if (length(avisos) > 0) {
+    registrar_evento_log(
+      etapa = "03_projecao",
+      nivel = "WARNING",
+      mensagem = paste("Warning em", etapa),
+      detalhe = paste("serie_id =", serie_id, "| modelo =", modelo, "|", paste(unique(avisos), collapse = " || "))
+    )
+  }
+
+  resultado
+}
 
 # ==============================================================================
 # Parte 3 — Validação cruzada por série (expanding window, h=1)
 # ==============================================================================
 
-cv_erros <- function(ts_obj, modelo_fn) {
+# CV expanding window com múltiplos horizontes.
+# Retorna matriz de erros: linhas = janelas de treino, colunas = horizontes.
+# Usa h_max = max(horizontes) por previsão para eficiência (um único ajuste
+# do modelo por janela cobre todos os horizontes solicitados).
+cv_erros_multi <- function(ts_obj, modelo_fn, serie_id, modelo, horizontes) {
+  h_max  <- max(horizontes)
   n      <- length(ts_obj)
   tempos <- time(ts_obj)
-  erros  <- rep(NA_real_, n - MIN_TRAIN)
+  # Janelas válidas: treino em MIN_TRAIN..n-h_max para ter h_max obs de hold-out
+  n_win  <- n - MIN_TRAIN - h_max + 1L
+  if (n_win <= 0L) return(matrix(NA_real_, nrow = 0L, ncol = length(horizontes),
+                                 dimnames = list(NULL, paste0("h", horizontes))))
+  erros <- matrix(NA_real_, nrow = n_win, ncol = length(horizontes))
+  colnames(erros) <- paste0("h", horizontes)
 
-  for (i in seq(MIN_TRAIN, n - 1L)) {
+  for (i in seq(MIN_TRAIN, n - h_max)) {
     treino <- window(ts_obj, end = tempos[i])
-    real   <- as.numeric(ts_obj)[i + 1L]
-    tryCatch({
-      fc   <- modelo_fn(treino, 1L)
-      pred <- as.numeric(fc$mean)[1L]
-      erros[i - MIN_TRAIN + 1L] <- real - pred
-    }, error = function(e) NULL, warning = function(w) NULL)
+    fc     <- executar_modelo_com_log(
+      modelo_fn(treino, h_max),
+      etapa    = "cv",
+      serie_id = serie_id,
+      modelo   = modelo
+    )
+    if (!inherits(fc, "erro_modelo")) {
+      preds <- as.numeric(fc$mean)
+      reais <- as.numeric(ts_obj)[i + seq_len(h_max)]
+      for (j in seq_along(horizontes))
+        erros[i - MIN_TRAIN + 1L, j] <- reais[horizontes[j]] - preds[horizontes[j]]
+    }
   }
   erros
 }
 
-metricas <- function(erros, ts_obj) {
+# Calcula métricas por horizonte a partir da matriz de erros e retorna tibble
+# com uma linha por horizonte + coluna mase_ponderado (agregado com pesos).
+metricas_multi <- function(erros_mat, ts_obj, horizontes, pesos) {
   vals    <- as.numeric(ts_obj)
   escala  <- mean(abs(diff(vals)), na.rm = TRUE)
-  refs    <- tail(vals, length(erros))
-  tibble(
-    n_ok  = sum(!is.na(erros)),
-    rmse  = sqrt(mean(erros^2,  na.rm = TRUE)),
-    mae   = mean(abs(erros),    na.rm = TRUE),
-    mape  = mean(abs(erros / refs) * 100, na.rm = TRUE),
-    mase  = if (escala > 0) mean(abs(erros), na.rm = TRUE) / escala else NA_real_
-  )
+  pesos_n <- pesos / sum(pesos)
+
+  metr_h <- map_dfr(seq_along(horizontes), function(j) {
+    e <- erros_mat[, j]
+    tibble(
+      horizonte = horizontes[j],
+      n_ok      = sum(!is.na(e)),
+      rmse      = sqrt(mean(e^2, na.rm = TRUE)),
+      mae       = mean(abs(e),   na.rm = TRUE),
+      mase      = if (escala > 0) mean(abs(e), na.rm = TRUE) / escala else NA_real_
+    )
+  })
+
+  mase_pond <- if (all(is.na(metr_h$mase))) NA_real_ else
+    sum(metr_h$mase * pesos_n, na.rm = TRUE)
+
+  metr_h |> mutate(mase_ponderado = mase_pond)
 }
+
+metadata_cache_cv <- criar_metadata_cache(
+  nome = "selecao_modelos",
+  objetos = list(
+    todas_series = todas_series,
+    ids = ids,
+    atividades = ATIVIDADES,
+    macro_map = MACRO_MAP
+  ),
+  arquivos = list(
+    especiais = "dados/especiais.rds",
+    conta_producao = "dados/conta_producao.rds"
+  ),
+  parametros = list(
+    H = H,
+    ANO_BASE = ANO_BASE,
+    ANO_FIM = ANO_FIM,
+    MIN_TRAIN = MIN_TRAIN,
+    modelos = names(MODELOS),
+    horizontes_cv = HORIZONTES_CV,
+    pesos_cv = PESOS_CV,
+    n_finalistas = N_FINALISTAS,
+    cache_schema_version = CACHE_SCHEMA_VERSION
+  ),
+  script_path = "R/03_projecao.R"
+)
 
 # ==============================================================================
 # Parte 4 — Loop de CV com cache
 # ==============================================================================
 
-if (file.exists("dados/selecao_modelos.rds")) {
-  message("Cache encontrado — pulando CV.")
-  selecao_cv <- readRDS("dados/selecao_modelos.rds")
-} else {
-  message("Iniciando CV: ", length(ids), " séries × ", length(MODELOS), " modelos...")
+cache_reutilizado <- cache_valido(
+  CACHE_MODELOS_PATH,
+  CACHE_MODELOS_META_PATH,
+  metadata_cache_cv
+)
 
-  resultados_cv <- map_dfr(seq_along(ids), function(i) {
+if (cache_reutilizado) {
+  message("Cache valido encontrado — pulando CV.")
+  registrar_evento_log(
+    etapa = "03_projecao",
+    nivel = "INFO",
+    mensagem = "Cache valido reutilizado",
+    detalhe = CACHE_MODELOS_PATH
+  )
+  selecao_cv <- readRDS(CACHE_MODELOS_PATH)
+} else {
+  message("Iniciando CV two-stage: ", length(ids), " séries × ",
+          length(MODELOS), " modelos, horizontes = ",
+          paste(HORIZONTES_CV, collapse = "+"), "...")
+  registrar_evento_log(
+    etapa = "03_projecao",
+    nivel = "INFO",
+    mensagem = "Cache invalido ou ausente — iniciando CV two-stage",
+    detalhe = CACHE_MODELOS_PATH
+  )
+
+  # --------------------------------------------------------------------------
+  # Stage 1 — triagem rápida (approx=TRUE) para todos os modelos
+  # --------------------------------------------------------------------------
+  message("  Stage 1: triagem rapida (", length(MODELOS), " modelos × approx=TRUE)...")
+
+  metricas_s1 <- map_dfr(seq_along(ids), function(i) {
     sid     <- ids[i]
     dados_s <- todas_series |> filter(serie_id == sid) |> arrange(ano)
     ts_obj  <- ts(dados_s$valor, start = min(dados_s$ano), frequency = 1)
 
-    if (i %% 50 == 0 || i == 1)
-      message("  [", i, "/", length(ids), "] ", sid)
+    if (i %% 100 == 0 || i == 1)
+      message("    [", i, "/", length(ids), "] ", sid)
 
     map_dfr(names(MODELOS), function(nm) {
-      erros <- tryCatch(
-        cv_erros(ts_obj, MODELOS[[nm]]),
-        error = function(e) rep(NA_real_, length(ts_obj) - MIN_TRAIN)
-      )
-      metricas(erros, ts_obj) |> mutate(serie_id = sid, modelo = nm)
+      erros_mat <- cv_erros_multi(ts_obj, MODELOS[[nm]],
+                                  serie_id = sid, modelo = nm,
+                                  horizontes = HORIZONTES_CV)
+      if (nrow(erros_mat) == 0L)
+        return(tibble(serie_id = sid, modelo = nm, horizonte = HORIZONTES_CV,
+                      n_ok = 0L, rmse = NA_real_, mae = NA_real_,
+                      mase = NA_real_, mase_ponderado = NA_real_))
+      metricas_multi(erros_mat, ts_obj, HORIZONTES_CV, PESOS_CV) |>
+        mutate(serie_id = sid, modelo = nm)
     })
   })
 
-  # Melhor modelo por série = menor MASE médio
-  melhor <- resultados_cv |>
-    filter(!is.na(mase)) |>
-    group_by(serie_id) |>
-    slice_min(mase, n = 1, with_ties = FALSE) |>
+  # Ponderado do stage 1 (uma linha por série × modelo)
+  resumo_s1 <- metricas_s1 |>
+    group_by(serie_id, modelo) |>
+    slice(1) |>           # mase_ponderado é igual em todas as linhas do grupo
     ungroup() |>
-    select(serie_id, melhor_modelo = modelo,
-           mase_melhor = mase, rmse_melhor = rmse, mae_melhor = mae)
+    select(serie_id, modelo, mase_ponderado_s1 = mase_ponderado)
 
-  # Tabela completa: métricas de todos os modelos em colunas
-  todas_metricas_wide <- resultados_cv |>
-    select(serie_id, modelo, mase) |>
-    pivot_wider(names_from = modelo, values_from = mase, names_prefix = "mase_")
+  # Top N_FINALISTAS finalistas por série (menor mase_ponderado no stage 1)
+  finalistas <- resumo_s1 |>
+    filter(!is.na(mase_ponderado_s1)) |>
+    group_by(serie_id) |>
+    slice_min(mase_ponderado_s1, n = N_FINALISTAS, with_ties = FALSE) |>
+    ungroup()
 
-  selecao_cv <- melhor |> left_join(todas_metricas_wide, by = "serie_id")
+  message("  Stage 1 concluido. Top ", N_FINALISTAS, " finalistas por serie.")
 
-  saveRDS(selecao_cv, "dados/selecao_modelos.rds")
-  message("CV concluído.")
+  # --------------------------------------------------------------------------
+  # Stage 2 — avaliação precisa (approx=FALSE) apenas para finalistas
+  # Modelos não-ARIMA têm especificação idêntica → reutiliza resultado s1.
+  # ARIMA e ARMA recalculados com approx=FALSE.
+  # --------------------------------------------------------------------------
+  message("  Stage 2: avaliacao precisa (finalistas × approx=FALSE para ARIMA/ARMA)...")
+
+  # Para séries anuais de ~22 obs, ordens acima de p/q=3 não têm suporte
+  # estatístico — limitar o grid reduz drasticamente o tempo sem perda real.
+  MODELOS_PRECISO <- MODELOS
+  MODELOS_PRECISO$arima <- function(x, h) forecast(auto.arima(x,
+                              stepwise = FALSE, approximation = FALSE,
+                              max.p = 3, max.q = 3, max.d = 2,
+                              max.P = 0, max.Q = 0, max.D = 0), h = h)
+  MODELOS_PRECISO$arma  <- function(x, h) forecast(auto.arima(x, d = 0,
+                              stepwise = FALSE, approximation = FALSE,
+                              max.p = 3, max.q = 3,
+                              max.P = 0, max.Q = 0, max.D = 0), h = h)
+  MODELOS_ARIMA_EXACTOS <- c("arima", "arma")
+
+  metricas_s2 <- map_dfr(seq_along(ids), function(i) {
+    sid         <- ids[i]
+    fins_sid    <- finalistas |> filter(serie_id == sid) |> pull(modelo)
+    dados_s     <- todas_series |> filter(serie_id == sid) |> arrange(ano)
+    ts_obj      <- ts(dados_s$valor, start = min(dados_s$ano), frequency = 1)
+
+    map_dfr(fins_sid, function(nm) {
+      # Reutiliza stage 1 para modelos sem diferença de especificação
+      if (!nm %in% MODELOS_ARIMA_EXACTOS) {
+        metricas_s1 |>
+          filter(serie_id == sid, modelo == nm) |>
+          mutate(stage = "s1_reused")
+      } else {
+        erros_mat <- cv_erros_multi(ts_obj, MODELOS_PRECISO[[nm]],
+                                    serie_id = sid, modelo = nm,
+                                    horizontes = HORIZONTES_CV)
+        if (nrow(erros_mat) == 0L)
+          return(tibble(serie_id = sid, modelo = nm, horizonte = HORIZONTES_CV,
+                        n_ok = 0L, rmse = NA_real_, mae = NA_real_,
+                        mase = NA_real_, mase_ponderado = NA_real_, stage = "s2"))
+        metricas_multi(erros_mat, ts_obj, HORIZONTES_CV, PESOS_CV) |>
+          mutate(serie_id = sid, modelo = nm, stage = "s2")
+      }
+    })
+  })
+
+  message("  Stage 2 concluido.")
+
+  # --------------------------------------------------------------------------
+  # Seleção final — vencedor por menor mase_ponderado do stage 2
+  # --------------------------------------------------------------------------
+  resumo_s2 <- metricas_s2 |>
+    group_by(serie_id, modelo) |>
+    slice(1) |>
+    ungroup() |>
+    select(serie_id, modelo, mase_ponderado = mase_ponderado)
+
+  melhor <- resumo_s2 |>
+    filter(!is.na(mase_ponderado)) |>
+    group_by(serie_id) |>
+    slice_min(mase_ponderado, n = 1, with_ties = FALSE) |>
+    ungroup() |>
+    select(serie_id, melhor_modelo = modelo, mase_ponderado)
+
+  # Métricas por horizonte do vencedor (para diagnóstico)
+  metricas_vencedor_h <- melhor |>
+    left_join(metricas_s2 |> select(serie_id, modelo, horizonte, mase),
+              by = c("serie_id", "melhor_modelo" = "modelo")) |>
+    pivot_wider(names_from = horizonte, values_from = mase,
+                names_prefix = "mase_venc_h") |>
+    select(serie_id, starts_with("mase_venc_h"))
+
+  # Tabela wide com mase_ponderado de todos os modelos (stage 1) para referência
+  todas_metricas_wide <- resumo_s1 |>
+    pivot_wider(names_from = modelo, values_from = mase_ponderado_s1,
+                names_prefix = "mase_pond_")
+
+  selecao_cv <- melhor |>
+    left_join(metricas_vencedor_h, by = "serie_id") |>
+    left_join(todas_metricas_wide,  by = "serie_id")
+
+  # Salvar detalhamento completo por série × modelo × horizonte
+  saveRDS(metricas_s1, "dados/metricas_cv_detalhadas.rds")
+  message("Métricas CV detalhadas: ", nrow(metricas_s1), " linhas salvas.")
+
+  salvar_cache_com_metadata(
+    obj = selecao_cv,
+    cache_path = CACHE_MODELOS_PATH,
+    meta_path = CACHE_MODELOS_META_PATH,
+    metadata_atual = metadata_cache_cv
+  )
+  message("CV two-stage concluído.")
 }
 
 # ==============================================================================
@@ -334,9 +535,13 @@ print(sort(table(selecao_cv$melhor_modelo), decreasing = TRUE))
 # Para projeção final: ARIMA/ARMA sem approximation (mais preciso)
 MODELOS_FINAL <- MODELOS
 MODELOS_FINAL$arima <- function(x, h) forecast(auto.arima(x,
-                                  stepwise = FALSE, approximation = FALSE), h = h)
+                                  stepwise = FALSE, approximation = FALSE,
+                                  max.p = 3, max.q = 3, max.d = 2,
+                                  max.P = 0, max.Q = 0, max.D = 0), h = h)
 MODELOS_FINAL$arma  <- function(x, h) forecast(auto.arima(x, d = 0,
-                                  stepwise = FALSE, approximation = FALSE), h = h)
+                                  stepwise = FALSE, approximation = FALSE,
+                                  max.p = 3, max.q = 3,
+                                  max.P = 0, max.Q = 0, max.D = 0), h = h)
 
 message("\nGerando projeções finais...")
 
@@ -347,14 +552,41 @@ projecoes_brutas <- map_dfr(ids, function(sid) {
 
   if (length(modelo_nm) == 0 || is.na(modelo_nm)) modelo_nm <- "arima"
 
-  fc <- tryCatch(
+  fc <- executar_modelo_com_log(
     MODELOS_FINAL[[modelo_nm]](ts_obj, H),
-    error = function(e) {
-      message("  Fallback ARIMA para: ", sid)
-      modelo_nm <<- "arima"
-      MODELOS_FINAL$arima(ts_obj, H)
-    }
+    etapa = "projecao_final",
+    serie_id = sid,
+    modelo = modelo_nm
   )
+
+  if (inherits(fc, "erro_modelo")) {
+    motivo_fb <- fc$mensagem
+    message("  Fallback ARIMA para: ", sid)
+    fallback_log <<- bind_rows(fallback_log, tibble(
+      serie_id        = sid,
+      modelo_original = modelo_nm,
+      modelo_fallback = "arima",
+      etapa           = "projecao_final",
+      motivo          = if (!is.null(motivo_fb)) motivo_fb else "erro_desconhecido"
+    ))
+    registrar_evento_log(
+      etapa = "03_projecao",
+      nivel = "WARNING",
+      mensagem = "Fallback para ARIMA",
+      detalhe = paste("serie_id =", sid, "| modelo_original =", modelo_nm)
+    )
+    modelo_nm <- "arima"
+    fc <- executar_modelo_com_log(
+      MODELOS_FINAL$arima(ts_obj, H),
+      etapa = "fallback_arima",
+      serie_id = sid,
+      modelo = modelo_nm
+    )
+  }
+
+  if (inherits(fc, "erro_modelo")) {
+    stop("Falha definitiva na projeção final da série: ", sid)
+  }
 
   parametros_str <- tryCatch(
     if (!is.null(fc$method)) as.character(fc$method) else toupper(modelo_nm),
@@ -389,12 +621,26 @@ projecoes_brutas <- map_dfr(ids, function(sid) {
 saveRDS(projecoes_brutas, "dados/projecoes_brutas.rds")
 message("Projeções brutas: ", nrow(projecoes_brutas), " linhas")
 
+# Salvar log de fallbacks e verificar limiar de degradação
+saveRDS(fallback_log, "dados/fallback_log.rds")
+if (nrow(fallback_log) > 0L)
+  message("Fallbacks registrados: ", nrow(fallback_log), " séries")
+
+pct_fallback <- nrow(fallback_log) / length(ids)
+if (pct_fallback > MAX_FALLBACK_PCT) {
+  stop(sprintf(
+    "Degradacao excessiva: %.1f%% de fallbacks (limite = %.0f%%)",
+    pct_fallback * 100, MAX_FALLBACK_PCT * 100
+  ))
+}
+
 # Tabela de parâmetros: uma linha por série com modelo selecionado e parâmetros
 params_modelos <- projecoes_brutas |>
   distinct(serie_id, geo, geo_tipo, regiao, macrossetor, atividade, variavel,
            modelo, parametros) |>
   left_join(
-    selecao_cv |> select(serie_id, mase_melhor, rmse_melhor, mae_melhor),
+    selecao_cv |> select(serie_id, mase_ponderado,
+                         starts_with("mase_venc_h")),
     by = "serie_id"
   )
 saveRDS(params_modelos, "dados/params_modelos.rds")
@@ -587,5 +833,17 @@ projecoes_derivadas |>
          `Cresc real (%)` = tx_cresc_pib_real,
          `Deflator (%)` = deflator_pib) |>
   print(n = 20)
+
+registrar_evento_log(
+  etapa = "03_projecao",
+  nivel = "INFO",
+  mensagem = "Resumo da modelagem",
+  detalhe = paste(
+    "series =", length(ids),
+    "| cache =", if (cache_reutilizado) "reutilizado" else "recalculado",
+    "| fallbacks =", nrow(fallback_log),
+    "| pct_fallback =", round(nrow(fallback_log) / length(ids) * 100, 1), "%"
+  )
+)
 
 message("\n03_projecao.R concluído.")

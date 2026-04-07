@@ -1,3 +1,5 @@
+source("R/config.R", local = FALSE)
+
 library(tidyverse)
 
 # ==============================================================================
@@ -11,22 +13,30 @@ library(tidyverse)
 # Deve ser executado a partir da raiz do projeto após rodar o pipeline
 # completo (01 a 04).
 #
-# Saídas em painel/data/:
+# Saídas públicas em painel/data/:
 #   serie_principal.csv  — histórico + projetado para 5 variáveis agregadas,
-#                          com IC 95% no período projetado
-#   vab_macrossetor.csv  — histórico + projetado por macrossetor, com IC 95%
-#   vab_atividade.csv    — histórico + projetado por atividade, com IC 95%
+#                          limitado ao horizonte público do painel
+#   vab_macrossetor.csv  — histórico + projetado por macrossetor, limitado ao
+#                          horizonte público do painel
+#   vab_atividade.csv    — histórico + projetado por atividade, limitado ao
+#                          horizonte público do painel
+#
+# Saídas técnicas adicionais:
+#   output/tabelas/projecoes_painel_h8.xlsx
+#     — estrutura técnica de referência com o horizonte completo (2024–2031)
+#   output/tabelas/projecoes_painel_h3.xlsx
+#     — cópia estrutural idêntica da saída h=8, mas limitada ao horizonte
+#       público do painel (2024–2026)
 #
 # Estrutura comum (formato longo):
-#   geo, geo_tipo, regiao, ano, <variavel(is)>, lo95, hi95, tipo
+#   geo, geo_tipo, regiao, ano, <variavel(is)>, lo95, hi95, tipo, horizonte
 #   tipo = "Histórico" (2002–2023) ou "Projetado" (2024–2031)
+#   horizonte = "Histórico" | "Operacional" | "Exploratório"
 #   lo95/hi95 = NA no período histórico
 # ==============================================================================
 
-ANO_HIST_INI <- 2002L
-ANO_HIST_FIM <- 2023L
-
 dir.create("painel/data", recursive = TRUE, showWarnings = FALSE)
+dir.create("output/tabelas", recursive = TRUE, showWarnings = FALSE)
 
 message("Carregando dados...")
 esp         <- readRDS("dados/especiais.rds")
@@ -211,6 +221,19 @@ proj_indices_ci <- proj_rec |>
 
 message("Montando serie_principal.csv...")
 
+classificar_horizonte <- function(ano, tipo) {
+  case_when(
+    tipo == "Histórico" ~ "Histórico",
+    ano <= ANO_OPERACIONAL_FIM ~ "Operacional",
+    TRUE ~ "Exploratório"
+  )
+}
+
+filtrar_horizonte_painel <- function(df) {
+  df |>
+    filter(tipo == "Histórico" | ano <= ANO_PAINEL_PROJ_FIM)
+}
+
 # Histórico: 5 variáveis em formato longo (geo_tipo/regiao já nas séries)
 hist_principal <- bind_rows(
   pib_nom_hist |>
@@ -219,33 +242,38 @@ hist_principal <- bind_rows(
               variavel = "pib_nominal",
               valor = pib_nominal,
               lo95 = NA_real_, hi95 = NA_real_,
-              tipo = "Histórico"),
+              tipo = "Histórico",
+              horizonte = classificar_horizonte(ano, "Histórico")),
   vab_nom_hist |>
     filter(ano >= ANO_HIST_INI) |>
     transmute(geo, geo_tipo, regiao, ano,
               variavel = "vab_nominal_total",
               valor = vab_nominal,
               lo95 = NA_real_, hi95 = NA_real_,
-              tipo = "Histórico"),
+              tipo = "Histórico",
+              horizonte = classificar_horizonte(ano, "Histórico")),
   imp_nom_hist |>
     filter(ano >= ANO_HIST_INI) |>
     transmute(geo, geo_tipo, regiao, ano,
               variavel = "impostos_nominal",
               valor = impostos_nominal,
               lo95 = NA_real_, hi95 = NA_real_,
-              tipo = "Histórico"),
+              tipo = "Histórico",
+              horizonte = classificar_horizonte(ano, "Histórico")),
   hist_indices |>
     transmute(geo, geo_tipo, regiao, ano,
               variavel = "idx_vol_pib",
               valor = idx_vol_pib,
               lo95 = NA_real_, hi95 = NA_real_,
-              tipo = "Histórico"),
+              tipo = "Histórico",
+              horizonte = classificar_horizonte(ano, "Histórico")),
   hist_indices |>
     transmute(geo, geo_tipo, regiao, ano,
               variavel = "idx_deflator",
               valor = idx_deflator,
               lo95 = NA_real_, hi95 = NA_real_,
-              tipo = "Histórico")
+              tipo = "Histórico",
+              horizonte = classificar_horizonte(ano, "Histórico"))
 )
 
 # Projetado: 5 variáveis em formato longo
@@ -257,7 +285,8 @@ proj_principal <- bind_rows(
               variavel = "pib_nominal",
               valor = pib_nominal,
               lo95 = pib_lo95, hi95 = pib_hi95,
-              tipo = "Projetado"),
+              tipo = "Projetado",
+              horizonte = classificar_horizonte(ano, "Projetado")),
   proj_rec |>
     left_join(vab_total_ci, by = c("geo", "ano")) |>
 
@@ -265,7 +294,8 @@ proj_principal <- bind_rows(
               variavel = "vab_nominal_total",
               valor = vab_nominal_total,
               lo95 = vab_lo95, hi95 = vab_hi95,
-              tipo = "Projetado"),
+              tipo = "Projetado",
+              horizonte = classificar_horizonte(ano, "Projetado")),
   proj_rec |>
     left_join(imp_ci, by = c("geo", "ano")) |>
 
@@ -273,29 +303,34 @@ proj_principal <- bind_rows(
               variavel = "impostos_nominal",
               valor = impostos_nominal,
               lo95 = imp_lo95, hi95 = imp_hi95,
-              tipo = "Projetado"),
+              tipo = "Projetado",
+              horizonte = classificar_horizonte(ano, "Projetado")),
   proj_rec |>
     left_join(proj_indices_ci, by = c("geo", "ano")) |>
     transmute(geo, geo_tipo, regiao, ano,
               variavel = "idx_vol_pib",
               valor = idx_vol,
               lo95 = idx_vol_lo, hi95 = idx_vol_hi,
-              tipo = "Projetado"),
+              tipo = "Projetado",
+              horizonte = classificar_horizonte(ano, "Projetado")),
   proj_rec |>
     left_join(proj_indices_ci, by = c("geo", "ano")) |>
     transmute(geo, geo_tipo, regiao, ano,
               variavel = "idx_deflator",
               valor = idx_defl,
               lo95 = idx_defl_lo, hi95 = idx_defl_hi,
-              tipo = "Projetado")
+              tipo = "Projetado",
+              horizonte = classificar_horizonte(ano, "Projetado"))
 )
 
 serie_principal <- bind_rows(hist_principal, proj_principal) |>
   arrange(geo, variavel, ano)
 
-write.csv(serie_principal, "painel/data/serie_principal.csv",
+serie_principal_painel <- filtrar_horizonte_painel(serie_principal)
+
+write.csv(serie_principal_painel, "painel/data/serie_principal.csv",
           row.names = FALSE, na = "")
-message("  serie_principal.csv: ", nrow(serie_principal), " linhas")
+message("  serie_principal.csv: ", nrow(serie_principal_painel), " linhas")
 
 # ==============================================================================
 # 2. vab_macrossetor.csv
@@ -322,20 +357,24 @@ hist_mac <- vab_hist |>
   transmute(geo, geo_tipo, regiao, macrossetor, ano,
             vab_nominal = val_corrente,
             vab_lo95 = NA_real_, vab_hi95 = NA_real_,
-            tipo = "Histórico")
+            tipo = "Histórico",
+            horizonte = classificar_horizonte(ano, "Histórico"))
 
 proj_mac <- vab_mac_ci |>
   left_join(geo_meta, by = "geo") |>
   transmute(geo, geo_tipo, regiao, macrossetor, ano,
             vab_nominal, vab_lo95, vab_hi95,
-            tipo = "Projetado")
+            tipo = "Projetado",
+            horizonte = classificar_horizonte(ano, "Projetado"))
 
 vab_macrossetor_out <- bind_rows(hist_mac, proj_mac) |>
   arrange(geo, macrossetor, ano)
 
-write.csv(vab_macrossetor_out, "painel/data/vab_macrossetor.csv",
+vab_macrossetor_painel <- filtrar_horizonte_painel(vab_macrossetor_out)
+
+write.csv(vab_macrossetor_painel, "painel/data/vab_macrossetor.csv",
           row.names = FALSE, na = "")
-message("  vab_macrossetor.csv: ", nrow(vab_macrossetor_out), " linhas")
+message("  vab_macrossetor.csv: ", nrow(vab_macrossetor_painel), " linhas")
 
 # ==============================================================================
 # 3. vab_atividade.csv
@@ -351,22 +390,227 @@ if (!is.null(vab_ativ_hist) && !is.null(vab_ativ_rec)) {
     transmute(geo, geo_tipo, regiao, atividade, macrossetor, ano,
               vab_nominal = val_corrente,
               vab_lo95 = NA_real_, vab_hi95 = NA_real_,
-              tipo = "Histórico")
+              tipo = "Histórico",
+              horizonte = classificar_horizonte(ano, "Histórico"))
 
   proj_ativ <- vab_ativ_rec |>
     left_join(geo_meta |> select(geo, geo_tipo, regiao), by = "geo") |>
     transmute(geo, geo_tipo, regiao, atividade, macrossetor, ano,
               vab_nominal, vab_lo95, vab_hi95,
-              tipo = "Projetado")
+              tipo = "Projetado",
+              horizonte = classificar_horizonte(ano, "Projetado"))
 
   vab_atividade_out <- bind_rows(hist_ativ, proj_ativ) |>
     arrange(geo, atividade, ano)
 
-  write.csv(vab_atividade_out, "painel/data/vab_atividade.csv",
+  vab_atividade_painel <- filtrar_horizonte_painel(vab_atividade_out)
+
+  write.csv(vab_atividade_painel, "painel/data/vab_atividade.csv",
             row.names = FALSE, na = "")
-  message("  vab_atividade.csv: ", nrow(vab_atividade_out), " linhas")
+  message("  vab_atividade.csv: ", nrow(vab_atividade_painel), " linhas")
 } else {
   message("vab_atividade_hist.rds ou vab_atividade_reconciliada.rds não encontrados — pulando.")
 }
+
+message("Salvando saídas técnicas adicionais (h=3 e h=8)...")
+
+exportar_workbook_painel <- function(caminho, serie_proj, macro_proj, ativ_proj = NULL) {
+  wb <- openxlsx::createWorkbook()
+
+  openxlsx::addWorksheet(wb, "serie_principal")
+  openxlsx::writeData(wb, "serie_principal", serie_proj)
+
+  openxlsx::addWorksheet(wb, "vab_macrossetor")
+  openxlsx::writeData(wb, "vab_macrossetor", macro_proj)
+
+  if (!is.null(ativ_proj)) {
+    openxlsx::addWorksheet(wb, "vab_atividade")
+    openxlsx::writeData(wb, "vab_atividade", ativ_proj)
+  }
+
+  openxlsx::saveWorkbook(wb, caminho, overwrite = TRUE)
+}
+
+serie_principal_h8 <- serie_principal |>
+  filter(tipo == "Projetado")
+
+vab_macrossetor_h8 <- vab_macrossetor_out |>
+  filter(tipo == "Projetado")
+
+vab_atividade_h8 <- if (exists("vab_atividade_out")) {
+  vab_atividade_out |>
+    filter(tipo == "Projetado")
+} else {
+  NULL
+}
+
+exportar_workbook_painel(
+  caminho = "output/tabelas/projecoes_painel_h8.xlsx",
+  serie_proj = serie_principal_h8,
+  macro_proj = vab_macrossetor_h8,
+  ativ_proj = vab_atividade_h8
+)
+
+message("  projecoes_painel_h8.xlsx: horizonte técnico 2024–2031 preservado")
+
+serie_principal_h3 <- serie_principal_painel |>
+  filter(tipo == "Projetado")
+
+vab_macrossetor_h3 <- vab_macrossetor_painel |>
+  filter(tipo == "Projetado")
+
+vab_atividade_h3 <- if (exists("vab_atividade_painel")) {
+  vab_atividade_painel |>
+    filter(tipo == "Projetado")
+} else {
+  NULL
+}
+
+exportar_workbook_painel(
+  caminho = "output/tabelas/projecoes_painel_h3.xlsx",
+  serie_proj = serie_principal_h3,
+  macro_proj = vab_macrossetor_h3,
+  ativ_proj = vab_atividade_h3
+)
+
+message("  projecoes_painel_h3.xlsx: cópia estrutural do h=8 no horizonte público 2024–2026")
+
+# ==============================================================================
+# CSV de diagnóstico dos modelos
+# Uma linha por série: modelo vencedor, métricas CV, status de fallback
+# ==============================================================================
+
+message("\nExportando diagnóstico dos modelos...")
+
+params <- readRDS("dados/params_modelos.rds")
+fb     <- readRDS("dados/fallback_log.rds")
+
+diagnostico <- params |>
+  mutate(
+    serie_tipo = case_when(
+      variavel == "log_impostos" ~ "Impostos",
+      !is.na(atividade)          ~ "Atividade",
+      TRUE                       ~ "Macrossetor"
+    )
+  ) |>
+  left_join(
+    fb |> distinct(serie_id) |> mutate(fallback = TRUE),
+    by = "serie_id"
+  ) |>
+  mutate(fallback = coalesce(fallback, FALSE)) |>
+  rename(
+    mase_h1 = mase_venc_h1,
+    mase_h2 = mase_venc_h2,
+    mase_h3 = mase_venc_h3
+  ) |>
+  select(geo, geo_tipo, serie_tipo, macrossetor, atividade, variavel,
+         modelo, parametros, mase_ponderado, mase_h1, mase_h2, mase_h3,
+         fallback)
+
+write_csv(diagnostico, "painel/data/diagnostico.csv")
+message("  diagnostico.csv: ", nrow(diagnostico), " séries")
+
+# ==============================================================================
+# XLSX público para download no painel
+# Mesmo conteúdo dos CSVs do painel (histórico + projetado até ANO_PAINEL_PROJ_FIM),
+# com colunas renomeadas para português, salvo em painel/data/ para ser
+# servido como arquivo estático via GitHub Pages.
+# ==============================================================================
+
+message("\nGerando tabela_painel.xlsx para download público...")
+
+VARIAVEL_LABEL_PT <- c(
+  pib_nominal       = "PIB Nominal (R$ milhões)",
+  vab_nominal_total = "VAB Nominal Total (R$ milhões)",
+  impostos_nominal  = "Impostos Líquidos de Subsídios (R$ milhões)",
+  idx_vol_pib       = "PIB Real — Índice Acumulado (base 100 = 2002)",
+  idx_deflator      = "Deflator Implícito — Índice Acumulado (base 100 = 2002)"
+)
+
+MACRO_LABEL_PT <- c(
+  agropecuaria = "Agropecuária",
+  industria    = "Indústria",
+  adm_publica  = "Adm. Pública",
+  servicos     = "Serviços"
+)
+
+ATIV_LABEL_PT <- c(
+  agropecuaria           = "Agropecuária",
+  ind_extrativa          = "Ind. Extrativas",
+  ind_transformacao      = "Ind. de Transformação",
+  eletricidade_gas_agua  = "Eletricidade/Gás/Água",
+  construcao             = "Construção",
+  comercio_veiculos      = "Comércio e Veículos",
+  transporte_armazenagem = "Transporte e Armazenagem",
+  informacao_comunicacao = "Informação e Comunicação",
+  financeiro_seguros     = "Financeiro e Seguros",
+  imobiliaria            = "Atividades Imobiliárias",
+  adm_publica            = "Adm. Pública",
+  outros_servicos        = "Outros Serviços"
+)
+
+aba_serie <- serie_principal_painel |>
+  mutate(variavel = coalesce(VARIAVEL_LABEL_PT[variavel], variavel)) |>
+  select(
+    `Território`               = geo,
+    `Tipo Território`          = geo_tipo,
+    `Região`                   = regiao,
+    `Ano`                      = ano,
+    `Variável`                 = variavel,
+    `Valor`                    = valor,
+    `Limite Inferior (IC 95%)` = lo95,
+    `Limite Superior (IC 95%)` = hi95,
+    `Tipo`                     = tipo,
+    `Horizonte`                = horizonte
+  )
+
+aba_macro <- vab_macrossetor_painel |>
+  mutate(macrossetor = coalesce(MACRO_LABEL_PT[macrossetor], macrossetor)) |>
+  select(
+    `Território`                        = geo,
+    `Tipo Território`                   = geo_tipo,
+    `Região`                            = regiao,
+    `Macrossetor`                       = macrossetor,
+    `Ano`                               = ano,
+    `VAB Nominal (R$ milhões)`          = vab_nominal,
+    `Limite Inferior VAB (IC 95%)`      = vab_lo95,
+    `Limite Superior VAB (IC 95%)`      = vab_hi95,
+    `Tipo`                              = tipo,
+    `Horizonte`                         = horizonte
+  )
+
+aba_ativ <- if (exists("vab_atividade_painel")) {
+  vab_atividade_painel |>
+    mutate(
+      macrossetor = coalesce(MACRO_LABEL_PT[macrossetor], macrossetor),
+      atividade   = coalesce(ATIV_LABEL_PT[atividade], atividade)
+    ) |>
+    select(
+      `Território`                        = geo,
+      `Tipo Território`                   = geo_tipo,
+      `Região`                            = regiao,
+      `Macrossetor`                       = macrossetor,
+      `Atividade`                         = atividade,
+      `Ano`                               = ano,
+      `VAB Nominal (R$ milhões)`          = vab_nominal,
+      `Limite Inferior VAB (IC 95%)`      = vab_lo95,
+      `Limite Superior VAB (IC 95%)`      = vab_hi95,
+      `Tipo`                              = tipo,
+      `Horizonte`                         = horizonte
+    )
+} else NULL
+
+wb_pub <- openxlsx::createWorkbook()
+openxlsx::addWorksheet(wb_pub, "Série Principal")
+openxlsx::writeData(wb_pub, "Série Principal", aba_serie)
+openxlsx::addWorksheet(wb_pub, "VAB Macrossetor")
+openxlsx::writeData(wb_pub, "VAB Macrossetor", aba_macro)
+if (!is.null(aba_ativ)) {
+  openxlsx::addWorksheet(wb_pub, "VAB Atividade")
+  openxlsx::writeData(wb_pub, "VAB Atividade", aba_ativ)
+}
+openxlsx::saveWorkbook(wb_pub, "painel/data/tabela_painel.xlsx", overwrite = TRUE)
+message("  tabela_painel.xlsx: ", nrow(aba_serie), " linhas (série), ",
+        nrow(aba_macro), " linhas (macro)")
 
 message("\n06_exportar_painel.R concluído. CSVs em painel/data/")

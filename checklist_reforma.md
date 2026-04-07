@@ -11,11 +11,11 @@
 
 ## Bloco 1 - Preservação e baseline
 
-- [ ] Criar branch de trabalho da reforma
-- [ ] Criar tag da versão atual
-- [ ] Registrar quais outputs atuais serão a referência da reforma
-- [ ] Preservar os CSVs atuais de `painel/data/`
-- [ ] Confirmar que a versão atual pode ser restaurada integralmente
+- [x] Criar branch de trabalho da reforma
+- [x] Criar tag da versão atual
+- [x] Registrar quais outputs atuais serão a referência da reforma
+- [x] Preservar os CSVs atuais de `painel/data/`
+- [x] Confirmar que a versão atual pode ser restaurada integralmente
 
 ---
 
@@ -23,34 +23,36 @@
 
 ### Ambiente e configuração
 
-- [ ] Adotar `renv`
-- [ ] Criar `renv.lock`
-- [ ] Remover `install.packages()` do pipeline analítico
-- [ ] Ajustar o workflow para restaurar o ambiente
-- [ ] Criar `R/config.R`
-- [ ] Centralizar anos, horizonte, seed e tolerâncias
+- [x] Adotar `renv`
+- [x] Criar `renv.lock`
+- [x] Remover `install.packages()` do pipeline analítico
+- [x] Ajustar o workflow para restaurar o ambiente
+- [x] Criar `R/config.R`
+- [x] Centralizar anos, horizonte, seed e tolerâncias
 
 ### Reprodutibilidade e cache
 
-- [ ] Definir `SEED_GLOBAL` no pipeline
-- [ ] Adicionar logging estruturado da execução
-- [ ] Registrar commit hash, timestamp e hash dos insumos
-- [ ] Criar utilitário de cache com invalidação automática
-- [ ] Salvar metadados do cache junto da seleção de modelos
-- [ ] Validar reutilização correta do cache
+- [x] Definir `SEED_GLOBAL` no pipeline
+- [x] Adicionar logging estruturado da execução
+- [x] Registrar commit hash, timestamp e hash dos insumos
+- [x] Criar utilitário de cache com invalidação automática
+- [x] Salvar metadados do cache junto da seleção de modelos
+- [x] Validar reutilização correta do cache
 
 ---
 
 ## Bloco 3 - QA e governança analítica
 
-- [ ] Tornar `R/02_consistencia.R` uma barreira de execução
-- [ ] Classificar checagens em erro fatal e warning monitorado
-- [ ] Fazer `R/run_all.R` interromper o pipeline quando o QA falhar
-- [ ] Definir horizonte operacional
-- [ ] Definir horizonte exploratório
-- [ ] Refletir essa distinção no README
-- [ ] Refletir essa distinção na metodologia
-- [ ] Refletir essa distinção no painel
+> Observação de estágio atual: a distinção operacional/exploratória foi implementada nesta etapa da reforma, mas o produto público do painel foi posteriormente simplificado para `h=3` (`2024–2026`), mantendo o horizonte longo apenas nas saídas técnicas.
+
+- [x] Tornar `R/02_consistencia.R` uma barreira de execução
+- [x] Classificar checagens em erro fatal e warning monitorado
+- [x] Fazer `R/run_all.R` interromper o pipeline quando o QA falhar
+- [x] Definir horizonte operacional
+- [x] Definir horizonte exploratório
+- [x] Refletir essa distinção no README
+- [x] Refletir essa distinção na metodologia
+- [x] Refletir essa distinção no painel
 
 ---
 
@@ -58,25 +60,25 @@
 
 ### Validação cruzada e seleção
 
-- [ ] Redesenhar o CV para múltiplos horizontes
-- [ ] Definir pesos dos horizontes do CV
-- [ ] Salvar métricas por horizonte e por modelo
-- [ ] Alinhar a triagem do CV com a estimação final
-- [ ] Reavaliar finalistas com a especificação final
+- [x] Redesenhar o CV para múltiplos horizontes
+- [x] Definir pesos dos horizontes do CV
+- [x] Salvar métricas por horizonte e por modelo
+- [x] Alinhar a triagem do CV com a estimação final
+- [x] Reavaliar finalistas com a especificação final
 
 ### Família de modelos
 
-- [ ] Definir a família principal de modelos do baseline
-- [ ] Mover modelos experimentais para trilha separada ou removê-los do baseline
-- [ ] Atualizar README com a nova família de modelos
-- [ ] Atualizar metodologia com a nova família de modelos
+- [x] Definir a família principal de modelos do baseline
+- [x] Mover modelos experimentais para trilha separada ou removê-los do baseline
+- [x] Atualizar README com a nova família de modelos
+- [x] Atualizar metodologia com a nova família de modelos
 
 ### Robustez de execução
 
-- [ ] Registrar warnings e erros por série/modelo
-- [ ] Registrar fallback por série
-- [ ] Definir limiar máximo aceitável de fallback
-- [ ] Fazer o pipeline falhar se a degradação exceder o limite
+- [x] Registrar warnings e erros por série/modelo
+- [x] Registrar fallback por série
+- [x] Definir limiar máximo aceitável de fallback
+- [x] Fazer o pipeline falhar se a degradação exceder o limite
 
 ---
 
@@ -84,26 +86,60 @@
 
 ### Diagnóstico analítico
 
-- [ ] Exportar CSV de diagnóstico dos modelos
-- [ ] Incluir modelo vencedor no diagnóstico
-- [ ] Incluir métricas principais no diagnóstico
-- [ ] Incluir ranking dos modelos no diagnóstico
-- [ ] Incluir status de fallback no diagnóstico
-- [ ] Expor diagnóstico no painel
+- [x] Permitir preview local do painel com dados de `painel/data`
+- [x] Garantir que o Quarto em `painel/` use o `renv` do projeto
+- [x] Criar scripts locais para preview e render do painel
+- [x] Criar script R para abrir o preview do painel
+- [x] Exportar CSV de diagnóstico dos modelos
+- [x] Incluir modelo vencedor no diagnóstico
+- [x] Incluir métricas principais no diagnóstico
+- [x] Incluir ranking dos modelos no diagnóstico
+- [x] Incluir status de fallback no diagnóstico
+- [x] Expor diagnóstico no painel
 
 ### CI/CD
 
-- [ ] Criar workflow de rebuild analítico
-- [ ] Separar workflow de deploy do painel
-- [ ] Condicionar publicação a base analítica válida
+- [x] Criar workflow de rebuild analítico (stub documentado)
+- [x] Separar workflow de deploy do painel
+- [ ] Condicionar publicação a base analítica válida (fase futura — exige automação IBGE)
 
 ### Documentação
 
-- [ ] Atualizar `README.md`
-- [ ] Atualizar `painel/metodologia.html`
-- [ ] Criar `docs/arquitetura.md`
-- [ ] Criar `docs/qa.md`
-- [ ] Criar `docs/modelagem.md`
+- [x] Atualizar `README.md`
+- [x] Atualizar `painel/metodologia.html`
+- [x] Criar `docs/arquitetura.md`
+- [x] Criar `docs/qa.md`
+- [x] Criar `docs/modelagem.md`
+
+---
+
+## Bloco 6 - Automação de download e parametrização temporal
+
+### Download automático
+
+- [x] Criar `R/00_download_ibge.R` com download do FTP e SIDRA
+- [x] Implementar tratamento de erros com códigos estruturados (E01–E05)
+- [x] Implementar validação cruzada dos dados baixados
+- [x] Gravar status em `painel/data/status_dados.json`
+- [x] Expor status no footer do painel
+
+### Parametrização temporal
+
+- [x] Derivar caminhos de `base_bruta/` a partir de `ANO_HIST_INI`/`ANO_HIST_FIM`
+- [x] Derivar ranges de colunas dos Especiais a partir de `N_ANOS`
+- [x] Derivar ranges de linhas da Conta da Produção a partir de `N_ANOS`
+- [x] Integrar `config.R` em `01_leitura_dados.R`
+
+### Integração no pipeline
+
+- [x] Adicionar etapa 0 opcional em `run_all.R`
+- [x] Documentar pacotes necessários (httr2, sidrar, jsonlite, openxlsx)
+- [x] Instalar pacotes novos e atualizar `renv.lock` (httr2 1.2.2, sidrar 0.2.9, rjson 0.2.23)
+
+### Documentação do Bloco 6
+
+- [x] Atualizar `README.md` com seção de download automático e flag `DOWNLOAD_ANTES_DE_RODAR`
+- [x] Atualizar `docs/arquitetura.md` com `00_download_ibge.R`, novos parâmetros de config e fluxo de publicação
 
 ---
 
@@ -118,8 +154,9 @@
 
 ## Status geral
 
-- [ ] Bloco 1 concluído
-- [ ] Bloco 2 concluído
-- [ ] Bloco 3 concluído
-- [ ] Bloco 4 concluído
-- [ ] Bloco 5 concluído
+- [x] Bloco 1 concluído
+- [x] Bloco 2 concluído
+- [x] Bloco 3 concluído
+- [x] Bloco 4 concluído
+- [x] Bloco 5 concluído
+- [x] Bloco 6 concluído
